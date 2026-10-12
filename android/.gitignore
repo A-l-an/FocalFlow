@@ -1,0 +1,53 @@
+## generated content files
+braille/translate/src/phone/res/raw/translationtables.zip
+braille/brltty/src/phone/res/raw/keytables.zip
+
+## special build files
+local.properties
+.gradle/
+
+## generated intermediates
+braille/brailledisplay/build/
+braille/brailledisplayanalytics/build/
+braille/brailleime/build/
+braille/brailleimeanalytics/build/
+braille/brltty/.cxx/
+braille/brltty/build/
+braille/common/build/
+braille/interfaces/build/
+braille/translate/.cxx/
+braille/translate/build/
+build/
+proguard/build/
+talkback/build/
+utils/build/
+
+.idea/
+.DS_Store
+
+## Local credentials and signing material (keep only inert examples)
+.env
+.env.*
+!.env.example
+signing.properties
+keystore.properties
+key.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+## Android package output
+*.apk
+*.aab
+
+## liblouis generated intermediates, not vendored source/resources
+braille/translate/src/phone/jni/third_party/liblouis/liblouis/*.o
+braille/translate/src/phone/jni/third_party/liblouis/liblouis/*.lo
+braille/translate/src/phone/jni/third_party/liblouis/liblouis/*.la
+braille/translate/src/phone/jni/third_party/liblouis/liblouis/.libs/
+braille/translate/src/phone/jni/third_party/liblouis/liblouis/.deps/
+
+## Local audit output
+/audit-output/
+/audit-artifacts/

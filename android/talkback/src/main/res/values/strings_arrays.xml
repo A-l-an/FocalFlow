@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="InconsistentArrays">
+
+  <!-- The texts are titles in scrollable list views for the tutorial scrolling page. [CHAR_LIMIT=NONE]-->
+  <string-array name="tutorial_scrolling_item_titles" translatable="false">
+    <!-- The first item. [CHAR_LIMIT=NONE]-->
+    <item>@string/scrolling_item_text</item>
+    <!-- The second item. [CHAR_LIMIT=NONE]-->
+    <item>@string/scrolling_item_text</item>
+    <!-- The third item. [CHAR_LIMIT=NONE]-->
+    <item>@string/scrolling_item_text</item>
+  </string-array>
+</resources>

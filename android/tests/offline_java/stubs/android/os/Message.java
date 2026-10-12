@@ -1,0 +1,1 @@
+package android.os; public class Message { public int what; public Object obj; public Message(int w,Object o){what=w;obj=o;} }

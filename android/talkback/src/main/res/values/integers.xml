@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="group_language" type="id"/>
+    <item name="group_keyboard" type="id"/>
+    <item name="group_links" type="id"/>
+    <item name="custom_action_menu" type="id"/>
+    <item name="language_menu" type="id"/>
+    <item name="links_menu" type="id"/>
+    <item name="window_menu" type="id"/>
+    <item name="viewpager_menu" type="id"/>
+    <item name="seekbar_menu" type="id"/>
+    <item name="granularity_menu" type="id"/>
+    <item name="talkback_menu_listview" type="id"/>
+    <item name="image_caption_menu" type="id"/>
+    <item name="typo_suggestions_menu" type="id"/>
+
+    <integer name="quick_menu_overlay_font_weight">900</integer>
+
+    <!-- For next buttons in training. -->
+    <item name="training_next_button_0" type="id" />
+    <item name="training_next_button_1" type="id" />
+
+    <!-- For back buttons in training. -->
+    <item name="training_back_button_0" type="id" />
+    <item name="training_back_button_1" type="id" />
+
+    <!-- For exit buttons in training. -->
+    <item name="training_exit_button_0" type="id" />
+    <item name="training_exit_button_1" type="id" />
+
+    <!-- For finish buttons in training. -->
+    <item name="training_finish_button_0" type="id" />
+    <item name="training_finish_button_1" type="id" />
+</resources>

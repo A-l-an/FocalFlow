@@ -1,0 +1,15 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+apply from: "../shared.gradle"
+
+
+dependencies {
+    implementation project(':proguard')
+}
+
+android {
+    defaultConfig {
+        buildConfigField("String", "TALKBACK_APPLICATION_ID", '"' + talkbackApplicationId + '"')
+    }
+}

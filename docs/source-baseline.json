@@ -1,0 +1,246 @@
+{
+  "base_commits": {
+    "backend": "314d3b53646dbada806114c3cca442cad34e780d",
+    "android": "162abc52b92175ba786a44f0ad6771bb200303f6"
+  },
+  "overlay_files": [
+    {
+      "repo": "backend",
+      "path": "README.md",
+      "sha256": "24df847185e52a5f9d642fa5836f16dcab9f92cfca7cba1b008e01970c347ba1",
+      "bytes": 11896,
+      "mode": "0o755"
+    },
+    {
+      "repo": "backend",
+      "path": "docs/protocol-v1.md",
+      "sha256": "fd0f61dbb243a0d95b36d22a7e91f2fe2fe20c32f21c1a387d30b1704c8438db",
+      "bytes": 21201,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "examples/offline_demo.py",
+      "sha256": "82f870834124fb04899f6c659dc92a87dc81a9df789a4a0ef64baa783cf877dd",
+      "bytes": 9096,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "run.py",
+      "sha256": "ab8de3254b53e316042e31619c431a8f3179312570bbc155168b0c246c822c5a",
+      "bytes": 78540,
+      "mode": "0o755"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/protocol_bridge.py",
+      "sha256": "38487dffabf1146fca39b64fadb65d830f29d74d4bd887b02fd0daaf200028d3",
+      "bytes": 2244,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/session_ready_bridge.py",
+      "sha256": "1fe346739b2ea9411c6700d6544dd616ed62f0a92991cb2790bea78bc8e17bee",
+      "bytes": 892,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/test_freshness.py",
+      "sha256": "e0a97d8307f368375c2ea91295b4c46616aa73829499ee0d41848d2d93e98002",
+      "bytes": 62268,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/test_launcher_lifecycle.py",
+      "sha256": "11e90a6026df29390d65e207bea6db2108a5bca17c4cf0bb2ba08452379c76da",
+      "bytes": 24392,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/test_output_validation.py",
+      "sha256": "dd8d5580193237cf5ea160a2520c34a4d1705178432f30463c29c16be9286822",
+      "bytes": 21892,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/test_runtime_handshake.py",
+      "sha256": "5e9db98857ca55f5f0e9d2e7be8ba736e7c368418ad56e647cf6b1c58e6eceb6",
+      "bytes": 1758,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tests/test_session_ready.py",
+      "sha256": "1516646119ba4a309287123d0993dafe585067d87f55a7e1221b2a4a194779ca",
+      "bytes": 3033,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tools/manual_testing/README.md",
+      "sha256": "2bc5f89f0f0cbde9e7face2bc4ded0be8efdb0d6cf6dbc3d9c199367d6f23ab0",
+      "bytes": 4971,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tools/manual_testing/live_backend.py",
+      "sha256": "4b176f8b93ed93e1af9b863a177756681f9239c943b106ed89b3ff97917a0eaf",
+      "bytes": 23415,
+      "mode": "0o644"
+    },
+    {
+      "repo": "backend",
+      "path": "tools/manual_testing/manual_test.py",
+      "sha256": "517b131c53d68b91052d05b862fcf6d622d803623eae4cca77c22be8d6824e43",
+      "bytes": 21508,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "README.md",
+      "sha256": "38db1e8ad042d739dc5d3e491263b645fc63bf6fa05fcf5da9cfaa3c7a2b7b52",
+      "bytes": 15355,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "docs/protocol-v1.md",
+      "sha256": "fd0f61dbb243a0d95b36d22a7e91f2fe2fe20c32f21c1a387d30b1704c8438db",
+      "bytes": 21201,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/CaptureAdmissionTest.java",
+      "sha256": "37600d27dbf69dacb7f87e8ce5e05d26a40e16e8d73b11a2184fed6693ca8e6b",
+      "bytes": 4205,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/CaptureDispatchTest.java",
+      "sha256": "89aa2be178d56af0b57f2d32f471505618950abb63658ed28fadd27457c04292",
+      "bytes": 6257,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/CaptureQueueTest.java",
+      "sha256": "b4e7fb39e4590ea724ca3dbb7d862b9ff4ecef52056506e0732326be824990ef",
+      "bytes": 6008,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/ContinuityTest.java",
+      "sha256": "4c2a1bf5e7a5df8bdf8da04afffa830f63be19b13fdbba7afcd90d3182daa356",
+      "bytes": 13692,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/FreshnessTest.java",
+      "sha256": "c239312fe584896c5de7a4bf1b16585ae412f9f2eeab998b7bac2914d258b2a4",
+      "bytes": 11785,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/InteractionCoalescingTest.java",
+      "sha256": "d52add0a4901be89c8c335dd161552e4bc53f4a2e347e1e407931567eb5b7da1",
+      "bytes": 4453,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/MappingRestartRaceTest.java",
+      "sha256": "133aceaf45a5999676f98943b18c1b500c32923579a39ff147ff778b5342aad5",
+      "bytes": 4293,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/ProtocolTestSupport.java",
+      "sha256": "6af91816f03dc0aaf2345abb6d7189c623dc61df786ae7f3f31c188295900f40",
+      "bytes": 2745,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/ReadyTestSupport.java",
+      "sha256": "9539080f4fdea4103dd83c7935c63c7c91323d97f7417045f0fe2ffc000fdb62",
+      "bytes": 1794,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/RecoveryConnectionTest.java",
+      "sha256": "3e38661a527681c681b640ba3c7e1dabd8c4da98372b4878b4fd100806d2cb39",
+      "bytes": 8460,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/RecoveryLifecycleTest.java",
+      "sha256": "d33ea8d92ace1218a737f168bd1be53c8185eafb296f3531ba28cf0d251ad99b",
+      "bytes": 4912,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/ReservationTriggerTest.java",
+      "sha256": "ac6cb65251950766bd418883ff7b0bb6be3f0d19ff012cf8692e4dbaa79e23aa",
+      "bytes": 3957,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/SensitiveLoggingTest.java",
+      "sha256": "ec4527eedab0b688aa939887347ffb5d344cb5b300fc0c136fb6d866feddb889",
+      "bytes": 11289,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/ServiceExitTest.java",
+      "sha256": "9300d79749806a256cc333d4f78590c9699e91855c1c6a86e75d41af18984d63",
+      "bytes": 5380,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/SessionReadyTest.java",
+      "sha256": "b79045883e2d4913f8b5a70beb6ad725a3928127b76a172c82068e160ab0c93a",
+      "bytes": 5939,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/offline_java/TransportLifecycleTest.java",
+      "sha256": "8181f65569fb2eeae07401317559236119fdd012aa93b8b573e0c55060e1bac1",
+      "bytes": 11026,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "tests/run_sensitive_logging_tests.py",
+      "sha256": "bf80707b7f5bf441d6fc8b7a2d5917b43203c26253ca2131dda4d54c79edb261",
+      "bytes": 18321,
+      "mode": "0o644"
+    },
+    {
+      "repo": "android",
+      "path": "utils/src/main/java/com/google/android/accessibility/utils/PcConnectionManager.java",
+      "sha256": "7a900cd030a93f05a55023df5667b004b622756dae0a6dcefd85268d62beb9f6",
+      "bytes": 27771,
+      "mode": "0o644"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Original task prompt contract
+
+`task_preset_prompts.json` contains complete Planning, Decision, Classification and Talk messages/model IDs captured from clean backend HEAD `4b51e861a4e9aeccbaece6f6f50666b30fbeeaf7` using only the existing synthetic tree, PNG, fixed responses and fake voice/audio boundaries. The original `flag_burger` literal was selected before module execution (0 and 1), so its import-time Planning hint and later stage hints agreed. No live provider or personal data was used. Keep these fixtures independent of the new preset writer; intentional prompt changes require a separate review.

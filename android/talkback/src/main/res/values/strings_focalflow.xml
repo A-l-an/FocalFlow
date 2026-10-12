@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="focalflow_restore_browsing">Use standard browsing (pause AI)</string>
+  <string name="focalflow_resume_ai">Enable AI filtering</string>
+  <string name="focalflow_paused">Standard browsing restored. AI filtering is paused.</string>
+  <string name="focalflow_resumed">AI filtering enabled. Waiting for a new screen.</string>
+  <string name="focalflow_standard_browsing">Using standard browsing.</string>
+  <string name="focalflow_failure_restored">AI filtering is unavailable. Standard browsing restored.</string>
+  <string name="focalflow_details_not_ready">AI details are not ready yet.</string>
+  <string name="focalflow_details_requested">Requesting AI details.</string>
+  <string name="focalflow_waiting">FocalFlow is waiting for the computer. To exit, turn off FocalFlow in Accessibility settings.</string>
+  <string name="focalflow_connected">FocalFlow connected. Leave Accessibility settings and open the task app.</string>
+</resources>

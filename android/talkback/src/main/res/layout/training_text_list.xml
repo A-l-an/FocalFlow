@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+  <com.google.android.accessibility.utils.widget.NonScrollableListView
+      android:id="@+id/training_text_list"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:divider="@color/training_background_color"
+      android:layout_marginTop="@dimen/training_list_margin_top"/>
+
+</LinearLayout>

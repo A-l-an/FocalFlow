@@ -1,0 +1,67 @@
+// For building the open-source release of TalkBack.
+
+apply plugin: 'com.android.application'
+
+apply from: 'shared.gradle'
+
+apply from: 'version.gradle'
+
+final BUILD_TIMESTAMP = new Date().format('yyyy_MM_dd_HHmm')
+
+dependencies {
+    implementation project(':talkback')
+}
+
+buildscript {
+    ext.kotlin_version = "1.8.0"
+    repositories {
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'org.aspectj:aspectjtools:1.8.1'
+        // Here we set the version of the Android Gradle Plugin used by this
+        // script. It is best to use as new a version as possible, but beware
+        // that each version of the Gradle Plugin requires that the version of
+        // Gradle (used to drive the build) be a certain version or above. The
+        // correspondence is tracked here:
+        // https://developer.android.com/build/releases/gradle-plugin#updating-gradle
+        classpath 'com.android.tools.build:gradle:7.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+
+android {
+    defaultConfig {
+        applicationId talkbackApplicationId
+        versionName talkbackVersionName + "-" + BUILD_TIMESTAMP
+        minSdkVersion 26
+        targetSdkVersion 30
+        testInstrumentationRunner 'android.test.InstrumentationTestRunner'
+        multiDexEnabled true
+    }
+    packagingOptions {
+        exclude 'LICENSE'
+        exclude 'README'
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+    productFlavors {
+        phone {
+            dimension "target"
+        }
+        wear {
+            dimension "target"
+            versionNameSuffix "-wear"
+        }
+    }
+}

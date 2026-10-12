@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:background="@color/training_navigation_button_bar_background_color"
+    android:orientation="vertical"
+    android:elevation="1dp">
+
+  <LinearLayout
+      android:id="@+id/training_navigation"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="top"
+      android:orientation="horizontal"/>
+
+</LinearLayout>

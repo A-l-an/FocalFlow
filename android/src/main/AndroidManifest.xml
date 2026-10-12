@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.janus.talkback.custom"
+    >
+
+  <!-- Strings with the format ${foo}, such as ${applicationId}, are called
+  placeholders, and they get replaced by the build system with the appropriate
+  value when a build executes.
+  -->
+
+  <!-- The <queries> element allows us to ask the package manager about the
+  installation status of external components we are interested in. This policy
+  change was introduced in Android 11. Move from /accessibility/talkback/AndroidManifest.xml
+  to /accessibility/AndroidManifest.xml because merger tool doesn't support
+  <queries> (b/231523982).-->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.TTS_SERVICE" />
+    </intent>
+    <intent>
+      <action
+          android:name="android.speech.RecognitionService" />
+    </intent>
+  </queries>
+
+  <application
+     android:name="com.google.android.accessibility.talkback.TalkBackApplication"
+     android:label="FocalFlow"
+     >
+     
+     <!-- TalkBack服务 -->
+     <service
+         android:name="com.google.android.accessibility.talkback.TalkBackService"
+         android:exported="true"
+         android:label="FocalFlow"
+         android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+         <intent-filter>
+             <action android:name="android.accessibilityservice.AccessibilityService" />
+         </intent-filter>
+         <meta-data
+             android:name="android.accessibilityservice"
+             android:resource="@xml/accessibilityservice" />
+     </service>
+     
+  </application>
+
+</manifest>

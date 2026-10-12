@@ -1,0 +1,28 @@
+apply plugin: 'com.android.library'
+apply from: "../../shared.gradle"
+
+android {
+    ndkVersion "25.2.9519653"
+    externalNativeBuild {
+        ndkBuild {
+            path file('src/phone/jni/Android.mk')
+        }
+    }
+}
+
+dependencies {
+    implementation project(':brailleinterfaces')
+    implementation project(':brailletranslate')
+    implementation project(':braillecommon')
+    implementation project(':proguard')
+    implementation project(':utils')
+}
+
+task createBrlttyKeyTablesZip(type: Zip){
+    archiveFileName="keytables.zip"
+    destinationDirectory = file('src/phone/res/raw/')
+    from fileTree('./src/phone/tables/')
+}
+
+preBuild.dependsOn createBrlttyKeyTablesZip
+

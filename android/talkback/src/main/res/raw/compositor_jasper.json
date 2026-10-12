@@ -1,0 +1,9 @@
+{
+  "named_nodes": {
+    "hint_rule_seek_bar": {
+      "join": [
+        "%hint_rule_default"
+      ]
+    }
+  }
+}

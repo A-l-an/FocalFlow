@@ -1,0 +1,414 @@
+/*
+ * Copyright (C) 2012 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.google.android.accessibility.talkback.actor;
+
+import static com.google.android.accessibility.utils.Performance.EVENT_ID_UNTRACKED;
+import static com.google.android.accessibility.utils.input.CursorGranularity.DEFAULT;
+import static com.google.android.accessibility.utils.traversal.TraversalStrategy.SEARCH_FOCUS_FORWARD;
+
+import android.accessibilityservice.AccessibilityService;
+import android.content.Context;
+import android.os.Looper;
+import android.os.Message;
+import android.os.PowerManager;
+import androidx.annotation.IntDef;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import com.google.android.accessibility.talkback.Feedback;
+import com.google.android.accessibility.talkback.Pipeline;
+import com.google.android.accessibility.talkback.R;
+import com.google.android.accessibility.talkback.TalkBackService;
+import com.google.android.accessibility.talkback.eventprocessor.EventState;
+import com.google.android.accessibility.talkback.focusmanagement.AccessibilityFocusMonitor;
+import com.google.android.accessibility.talkback.focusmanagement.interpreter.ScreenStateMonitor;
+import com.google.android.accessibility.talkback.focusmanagement.record.FocusActionInfo;
+import com.google.android.accessibility.utils.AccessibilityNodeInfoUtils;
+import com.google.android.accessibility.utils.AccessibilityServiceCompatUtils;
+import com.google.android.accessibility.utils.Performance.EventId;
+import com.google.android.accessibility.utils.WeakReferenceHandler;
+import com.google.android.accessibility.utils.output.SpeechController;
+import com.google.android.accessibility.utils.traversal.OrderedTraversalStrategy;
+import com.google.android.accessibility.utils.traversal.TraversalStrategy;
+import com.google.android.accessibility.utils.traversal.TraversalStrategyUtils;
+import com.google.android.libraries.accessibility.utils.log.LogUtils;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
+/**
+ * Manages state related to reading the screen from top or next. Per b/202892443, the original
+ * read-from-next feature is modified to read-form-cursor.
+ */
+public class FullScreenReadActor {
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // Constants
+
+  /** Tag used for log output and wake lock */
+  private static final String TAG = "FullScreenReadActor";
+
+  public static final int STATE_STOPPED = 0;
+  public static final int STATE_READING_FROM_BEGINNING = 1;
+  public static final int STATE_READING_FROM_NEXT = 2;
+
+  /** The possible states of the controller. */
+  @IntDef({STATE_STOPPED, STATE_READING_FROM_BEGINNING, STATE_READING_FROM_NEXT})
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface ReadState {}
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // Member variables
+
+  /**
+   * The current state of the controller. Should only be updated through {@link
+   * FullScreenReadActor#setReadingState(int)}
+   */
+  @ReadState private int currentState = STATE_STOPPED;
+
+  @ReadState private int previousState = STATE_STOPPED;
+
+  @ReadState private int stateWaitingForContentFocus = STATE_STOPPED;
+
+  /** The parent service */
+  private final AccessibilityService service;
+
+  private final SpeechController speechController;
+
+  /** Feedback Returner of Pipeline for audio feedback */
+  private Pipeline.FeedbackReturner pipeline;
+
+  private final AccessibilityFocusMonitor accessibilityFocusMonitor;
+
+  /** Wake lock for keeping the device unlocked while reading */
+  private PowerManager.WakeLock wakeLock;
+
+  /** Dialog for continuous reading mode */
+  FullScreenReadDialog fullScreenReadDialog;
+
+  private final RetryReadingHandler retryReadingHandler = new RetryReadingHandler(this);
+
+  private final ScreenStateMonitor.State screenState;
+
+  @Nullable AccessibilityNodeInfoCompat pausedNode;
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // State-reading interface
+
+  /** Read-only interface, for event-interpreters to read this actor's state. */
+  public class State {
+
+    public boolean isActive() {
+      return FullScreenReadActor.this.isActive();
+    }
+
+    public boolean isPreviousActive() {
+      return FullScreenReadActor.this.isPreviousActive();
+    }
+
+    public boolean isWaitingForContentFocus() {
+      return fullScreenReadDialog.isWaitingForContentFocus();
+    }
+  }
+
+  public final State state = new State();
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // Construction
+
+  @SuppressWarnings("deprecation")
+  public FullScreenReadActor(
+      AccessibilityFocusMonitor accessibilityFocusMonitor,
+      TalkBackService service,
+      SpeechController speechController,
+      ScreenStateMonitor.State screenState) {
+    if (accessibilityFocusMonitor == null) {
+      throw new IllegalStateException();
+    }
+    this.accessibilityFocusMonitor = accessibilityFocusMonitor;
+    this.service = service;
+    this.speechController = speechController;
+    fullScreenReadDialog = new FullScreenReadDialog(service);
+    wakeLock =
+        ((PowerManager) service.getSystemService(Context.POWER_SERVICE))
+            .newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, TAG);
+    this.screenState = screenState;
+  }
+
+  public void setPipeline(Pipeline.FeedbackReturner pipeline) {
+    this.pipeline = pipeline;
+    fullScreenReadDialog.setPipeline(pipeline);
+  }
+
+  /** Releases all resources held by this controller and save any persistent preferences. */
+  public void shutdown() {
+    interrupt();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+  // Methods
+
+  /** Starts linearly reading from the node with accessibility focus. */
+  public void startReadingFromFocusedNode(EventId eventId) {
+    if (fullScreenReadDialog.getShouldShowDialogPref()) {
+      stateWaitingForContentFocus = STATE_READING_FROM_NEXT;
+      fullScreenReadDialog.showDialogBeforeReading(eventId);
+    } else {
+      startReadingFromFocusedNodeInternal(eventId);
+    }
+  }
+
+  private void startReadingFromFocusedNodeInternal(EventId eventId) {
+    if (isActive()) {
+      return;
+    }
+
+    @Nullable AccessibilityNodeInfoCompat currentNode =
+        accessibilityFocusMonitor.getAccessibilityFocus(/* useInputFocusIfEmpty= */ false);
+    if (currentNode == null) {
+      LogUtils.w(TAG, "Fail to read from next: Current node is null.");
+      return;
+    }
+
+    setReadingState(STATE_READING_FROM_NEXT);
+
+    if (!wakeLock.isHeld()) {
+      wakeLock.acquire();
+    }
+
+    // With this refocus to trigger the continuous reading mode from cursor position.
+    EventState.getInstance().setFlag(EventState.EVENT_NODE_REFOCUSED);
+    moveTo(currentNode);
+  }
+
+  /** Starts linearly reading from the top of the view hierarchy. */
+  public void startReadingFromBeginning(EventId eventId) {
+    if (fullScreenReadDialog.getShouldShowDialogPref()) {
+      // Show dialog before start reading.
+      stateWaitingForContentFocus = STATE_READING_FROM_BEGINNING;
+      fullScreenReadDialog.showDialogBeforeReading(eventId);
+    } else {
+      startReadingFromBeginningInternal(eventId, 0);
+    }
+  }
+
+  private void startReadingFromBeginningInternal(EventId eventId, int attemptCount) {
+    if (isActive()) {
+      return;
+    }
+
+    AccessibilityNodeInfoCompat rootNode =
+        AccessibilityServiceCompatUtils.getRootInActiveWindow(service);
+    if (rootNode == null) {
+      if (!retryReadingHandler.tryReadFromTopLater(eventId, attemptCount)) {
+        LogUtils.w(TAG, "Fail to read from top: No active window.");
+      }
+      return;
+    }
+
+    TraversalStrategy traversal = new OrderedTraversalStrategy(rootNode);
+    AccessibilityNodeInfoCompat firstNode =
+        TraversalStrategyUtils.findFirstFocusInNodeTree(
+            traversal,
+            rootNode,
+            SEARCH_FOCUS_FORWARD,
+            AccessibilityNodeInfoUtils.FILTER_SHOULD_FOCUS);
+
+    if (firstNode == null) {
+      return;
+    }
+
+    setReadingState(STATE_READING_FROM_BEGINNING);
+
+    if (!wakeLock.isHeld()) {
+      wakeLock.acquire();
+    }
+
+    // This is potentially a refocus, so we should set the refocus flag just in case.
+    EventState.getInstance().setFlag(EventState.EVENT_NODE_REFOCUSED);
+    moveTo(firstNode);
+  }
+
+  public void readFocusedContent(EventId eventId) {
+    if (!fullScreenReadDialog.isWaitingForContentFocus()) {
+      return;
+    }
+    fullScreenReadDialog.setWaitingForContentFocus(false);
+
+    if (stateWaitingForContentFocus == STATE_READING_FROM_BEGINNING) {
+      startReadingFromBeginningInternal(eventId, 0);
+    } else if (stateWaitingForContentFocus == STATE_READING_FROM_NEXT) {
+      startReadingFromFocusedNodeInternal(eventId);
+    }
+  }
+
+  /** Stops speech output and view traversal at the current position. */
+  public void interrupt() {
+    interrupt(false);
+  }
+
+  /** Ignore the pause speech and reset the continuous reading pause node. */
+  public void ignore() {
+    if (pausedNode != null) {
+      previousState = currentState;
+      speechController.ignorePause();
+      pausedNode = null;
+    }
+  }
+
+  private void interrupt(boolean internal) {
+    if (internal) {
+      LogUtils.d(TAG, "Continuous reading interrupt internal ");
+    }
+    setReadingState(STATE_STOPPED);
+
+    if (wakeLock.isHeld()) {
+      wakeLock.release();
+    }
+  }
+
+  private void moveTo(AccessibilityNodeInfoCompat node) {
+    EventId eventId = EVENT_ID_UNTRACKED; // First node's speech is already performance tracked.
+    FocusActionInfo focusActionInfo =
+        new FocusActionInfo.Builder().setSourceAction(FocusActionInfo.LOGICAL_NAVIGATION).build();
+    if (!pipeline.returnFeedback(
+        eventId,
+        Feedback.part()
+            .setFocus(Feedback.focus(node, focusActionInfo).setForceRefocus(true).build()))) {
+      pipeline.returnFeedback(eventId, Feedback.sound(R.raw.complete));
+      interrupt(/* internal= */ true);
+    }
+  }
+
+  private void moveForward() {
+    EventId eventId = EVENT_ID_UNTRACKED; // First node's speech is already performance tracked.
+    // Continuous reading mode (CRM) always uses default granularity.
+    if (!pipeline.returnFeedback(
+        eventId,
+        Feedback.focusDirection(SEARCH_FOCUS_FORWARD).setGranularity(DEFAULT).setScroll(true))) {
+      pipeline.returnFeedback(eventId, Feedback.sound(R.raw.complete));
+      interrupt(/* internal= */ true);
+    }
+  }
+
+  public void setReadingState(@ReadState int newState) {
+    LogUtils.v(TAG, "Continuous reading switching to mode: %s", newState);
+
+    previousState = currentState;
+    currentState = newState;
+
+    speechController.setShouldInjectAutoReadingCallbacks(isActive(), nodeSpokenRunnable);
+  }
+
+  /**
+   * Returns whether full-screen reading is currently active. Equivalent to calling {@code
+   * currentState != STATE_STOPPED}.
+   *
+   * @return Whether full-screen reading is currently active.
+   */
+  public boolean isActive() {
+    return currentState != STATE_STOPPED;
+  }
+
+  /**
+   * The previousState always keeps the previous state before it changed. TalkBack can determine if
+   * the resume is for a continuous reading mode by checking the previousState.
+   */
+  public boolean isPreviousActive() {
+    return previousState != STATE_STOPPED;
+  }
+
+  /**
+   * As the pause/resume leverages the same gesture, TalkBack caches the last paused node and
+   * compare it with the current focused node. If they are not the same, it should be pause action,
+   * otherwise, it could be a resume.
+   */
+  public void pauseOrResumeContinuousReadingState() {
+    if (!isActive() && !isPreviousActive()) {
+      return;
+    }
+
+    @Nullable AccessibilityNodeInfoCompat currentFocused =
+        accessibilityFocusMonitor.getAccessibilityFocus(/* useInputFocusIfEmpty= */ false);
+    if (currentFocused == null) {
+      return;
+    }
+
+    if (currentFocused.equals(pausedNode)) {
+      pausedNode = null;
+      if (isPreviousActive() && speechController.isContinuousReadingPaused()) {
+        setReadingState(STATE_READING_FROM_NEXT);
+      }
+    } else {
+      pausedNode = currentFocused;
+    }
+  }
+
+  /** Runnable executed when a node has finished being spoken */
+  private final SpeechController.UtteranceCompleteRunnable nodeSpokenRunnable =
+      new SpeechController.UtteranceCompleteRunnable() {
+        @Override
+        public void run(int status) {
+          if (isActive() && status != SpeechController.STATUS_INTERRUPTED) {
+            moveForward();
+          }
+        }
+      };
+
+  /**
+   * A {@link Handler} to retry ReadFromTop action. When the user performs read from top from Global
+   * Context Menu, it is possible that when the GCM is closed, {@link
+   * AccessibilityServiceCompatUtils#getRootInActiveWindow(AccessibilityService)} is not updated due
+   * to race condition. Then read from top action fails. This class is used to retry the action if
+   * the active window is not updated yet.
+   */
+  private static final class RetryReadingHandler extends WeakReferenceHandler<FullScreenReadActor> {
+    private static final int MSG_READ_FROM_TOP = 0;
+    private static final int MAX_RETRY_COUNT = 10;
+    private static final int RETRY_INTERVAL = 50;
+
+    RetryReadingHandler(FullScreenReadActor parent) {
+      super(parent, Looper.myLooper());
+    }
+
+    @Override
+    public void handleMessage(Message msg, FullScreenReadActor parent) {
+      if (msg.what == MSG_READ_FROM_TOP) {
+        parent.startReadingFromBeginningInternal((EventId) msg.obj, msg.arg1);
+      }
+    }
+
+    public void clear() {
+      removeMessages(MSG_READ_FROM_TOP);
+    }
+
+    public boolean tryReadFromTopLater(EventId eventId, int attemptCount) {
+      clear();
+      if (attemptCount > MAX_RETRY_COUNT) {
+        return false;
+      }
+      final Message msg =
+          Message.obtain(
+              this,
+              MSG_READ_FROM_TOP, /* what */
+              attemptCount + 1, /* arg1 */
+              0, /* arg2, not necessary*/
+              eventId /* obj */);
+      sendMessageDelayed(msg, RETRY_INTERVAL);
+
+      return true;
+    }
+  }
+}

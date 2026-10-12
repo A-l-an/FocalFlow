@@ -1,0 +1,223 @@
+[
+  {
+    "name": "current",
+    "accepted": true,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "version",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 2,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "bool_version",
+    "accepted": false,
+    "message": {
+      "protocolVersion": true,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "float_version",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1.0,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "request_type",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": 3
+    }
+  },
+  {
+    "name": "request_empty",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": ""
+    }
+  },
+  {
+    "name": "missing_context",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": null,
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "negative",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": -1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "float_epoch",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1.0,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "bool_seq",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": true
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "oversize",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 9007199254740992
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "uuid",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "not-session",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "extra",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1,
+        "extra": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "numeric_string_taskEpoch",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": "1",
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "numeric_string_snapshotSeq",
+    "accepted": false,
+    "message": {
+      "protocolVersion": 1,
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": "1"
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  },
+  {
+    "name": "numeric_string_version",
+    "accepted": false,
+    "message": {
+      "protocolVersion": "1",
+      "context": {
+        "sessionId": "00000000-0000-4000-8000-000000000099",
+        "taskEpoch": 1,
+        "snapshotSeq": 1
+      },
+      "type": "REQUEST_UI_UPDATE",
+      "requestId": "synthetic-request-04"
+    }
+  }
+]

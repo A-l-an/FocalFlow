@@ -1,0 +1,6 @@
+{
+  "planning": "### Thought ###\nUse the fictional sample card.\n### Subtask ###\nOpen the sample item.\n### Screen ###\nA fictional sample shelf.",
+  "decision": "### Thought ###\nThe sample card contains the next action.\n### Output ###\n```json\n[\"element-card\"]\n```",
+  "classification": "### Thought ###\nSelect Open and retain its title as context.\n### Categories ###\n```json\n{\n  \"标题\": {\n    \"element-title\": {\n      \"text\": \"Sample item\"\n    }\n  },\n  \"操作\": {\n    \"element-open\": {\n      \"text\": \"Open\"\n    }\n  },\n  \"说明\": {\n    \"element-hint\": {\n      \"text\": \"A fictional note\"\n    }\n  }\n}\n```\n### SelectedUI ###\n```json\n[\n  {\n    \"action_point\": \"element-open\",\n    \"context_elements\": [\n      {\n        \"name\": \"element-title\",\n        \"text\": \"Sample item\"\n      }\n    ]\n  }\n]\n```",
+  "talk": "### Thought ###\nInclude the fictional note.\n### Mode ###\nB\n### Displayed UI ###\n说明"
+}

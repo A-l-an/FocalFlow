@@ -1,0 +1,137 @@
+{
+  "className": "android.widget.FrameLayout",
+  "text": null,
+  "contentDescription": null,
+  "viewIdResourceName": "example.synthetic:id/node_1",
+  "isClickable": false,
+  "isCheckable": false,
+  "isChecked": false,
+  "isFocusable": false,
+  "isEnabled": true,
+  "isPassword": false,
+  "isSelected": false,
+  "centerCoordinates": "1,1",
+  "bounds": {
+    "left": 0,
+    "top": 0,
+    "right": 2,
+    "bottom": 2
+  },
+  "isVirtualFocusNode": false,
+  "virtualNodeId": "00000000-0000-4000-8000-000000000001",
+  "children": {
+    "element-card": {
+      "className": "android.widget.LinearLayout",
+      "text": null,
+      "contentDescription": null,
+      "viewIdResourceName": "example.synthetic:id/node_2",
+      "isClickable": false,
+      "isCheckable": false,
+      "isChecked": false,
+      "isFocusable": false,
+      "isEnabled": true,
+      "isPassword": false,
+      "isSelected": false,
+      "centerCoordinates": "1,1",
+      "bounds": {
+        "left": 0,
+        "top": 0,
+        "right": 2,
+        "bottom": 2
+      },
+      "isVirtualFocusNode": false,
+      "virtualNodeId": "00000000-0000-4000-8000-000000000002",
+      "children": {
+        "element-title": {
+          "className": "android.widget.TextView",
+          "text": "Sample item",
+          "contentDescription": null,
+          "viewIdResourceName": "example.synthetic:id/node_3",
+          "isClickable": false,
+          "isCheckable": false,
+          "isChecked": false,
+          "isFocusable": false,
+          "isEnabled": true,
+          "isPassword": false,
+          "isSelected": false,
+          "centerCoordinates": "1,1",
+          "bounds": {
+            "left": 0,
+            "top": 0,
+            "right": 2,
+            "bottom": 2
+          },
+          "isVirtualFocusNode": true,
+          "virtualNodeId": "00000000-0000-4000-8000-000000000003"
+        },
+        "element-open": {
+          "className": "android.widget.Button",
+          "text": "Open",
+          "contentDescription": null,
+          "viewIdResourceName": "example.synthetic:id/node_4",
+          "isClickable": true,
+          "isCheckable": false,
+          "isChecked": false,
+          "isFocusable": true,
+          "isEnabled": true,
+          "isPassword": false,
+          "isSelected": false,
+          "centerCoordinates": "1,1",
+          "bounds": {
+            "left": 0,
+            "top": 0,
+            "right": 2,
+            "bottom": 2
+          },
+          "isVirtualFocusNode": true,
+          "virtualNodeId": "00000000-0000-4000-8000-000000000004"
+        },
+        "element-hint": {
+          "className": "android.widget.TextView",
+          "text": "A fictional note",
+          "contentDescription": null,
+          "viewIdResourceName": "example.synthetic:id/node_5",
+          "isClickable": false,
+          "isCheckable": false,
+          "isChecked": false,
+          "isFocusable": false,
+          "isEnabled": true,
+          "isPassword": false,
+          "isSelected": false,
+          "centerCoordinates": "1,1",
+          "bounds": {
+            "left": 0,
+            "top": 0,
+            "right": 2,
+            "bottom": 2
+          },
+          "isVirtualFocusNode": true,
+          "virtualNodeId": "00000000-0000-4000-8000-000000000005"
+        }
+      }
+    },
+    "element-other": {
+      "className": "android.widget.Button",
+      "text": "Other item",
+      "contentDescription": null,
+      "viewIdResourceName": "example.synthetic:id/node_6",
+      "isClickable": true,
+      "isCheckable": false,
+      "isChecked": false,
+      "isFocusable": true,
+      "isEnabled": true,
+      "isPassword": false,
+      "isSelected": false,
+      "centerCoordinates": "1,1",
+      "bounds": {
+        "left": 0,
+        "top": 0,
+        "right": 2,
+        "bottom": 2
+      },
+      "isVirtualFocusNode": true,
+      "virtualNodeId": "00000000-0000-4000-8000-000000000006"
+    }
+  },
+  "captureTimestamp": 0
+}

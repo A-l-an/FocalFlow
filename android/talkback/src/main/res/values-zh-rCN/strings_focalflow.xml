@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="focalflow_restore_browsing">恢复标准浏览（暂停 AI）</string>
+  <string name="focalflow_resume_ai">启用 AI 过滤</string>
+  <string name="focalflow_paused">已恢复标准浏览，AI 过滤已暂停。</string>
+  <string name="focalflow_resumed">已启用 AI 过滤，等待新的界面。</string>
+  <string name="focalflow_standard_browsing">正在使用标准浏览。</string>
+  <string name="focalflow_failure_restored">AI 过滤暂不可用，已恢复标准浏览。</string>
+  <string name="focalflow_details_not_ready">AI 详情暂未准备好。</string>
+  <string name="focalflow_details_requested">正在请求 AI 详情。</string>
+  <string name="focalflow_waiting">FocalFlow 正在等待电脑。需要退出时，请在系统无障碍设置中关闭 FocalFlow。</string>
+  <string name="focalflow_connected">FocalFlow 已连接。请离开无障碍设置，进入任务应用。</string>
+</resources>

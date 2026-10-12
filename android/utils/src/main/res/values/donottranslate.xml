@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- the shared preference key for log level configuration. -->
+    <string name="pref_log_level_default" translatable="false">6</string>
+    <string name="pref_log_level_key" translatable="false">pref_log_level</string>
+</resources>

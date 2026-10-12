@@ -1,0 +1,24 @@
+# Local secrets/config and operator evidence must remain outside source.
+.env
+.env.*
+!.env.example
+!providers.env.example
+.envrc
+config.local.*
+*.jks
+*.keystore
+*.p12
+*.pfx
+.DS_Store
+__pycache__/
+*.py[cod]
+/.venv/
+/venv/
+/.local-audit/
+/audit-output/
+/audit-artifacts/
+/manual-tests/
+/models/
+/weights/
+/cache/
+/dist/

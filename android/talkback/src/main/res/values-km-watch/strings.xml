@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="talkback_service_description">TalkBack គឺជាមុខងារអានអេក្រង់ដែលត្រូវបានបង្កើតឡើងជាចម្បងសម្រាប់មនុស្សពិការភ្នែក និងខ្សោយភ្នែក។ មុខងារនេះអនុញ្ញាតឱ្យមានអន្តរកម្មជាមួយឧបករណ៍ដោយប្រើការអានអេក្រង់។</string>
+  <string name="summary_custom_action">បង្ហាញនៅពេល​សកម្មភាពផ្ទាល់ខ្លួន​មានសម្រាប់​ធាតុបច្ចុប្បន្ន។</string>
+  <string name="notification_title_talkback_gestures_changed">បានធ្វើបច្ចុប្បន្នភាពចលនាមុខងារតបវិញ</string>
+  <string name="notification_message_talkback_gestures_changed">បើក Talkback ដើម្បីទទួលបានព័ត៌មានលម្អិតបន្ថែម</string>
+  <string name="talkback_updated_notification_content">បើក TalkBack ដើម្បីទទួលបានព័ត៌មានលម្អិត</string>
+  <string name="new_feature_in_talkback_title">អ្វី​ដែលថ្មី</string>
+  <string name="reset_button_in_reset_gesture_settings_confirm_dialog">យល់ព្រម</string>
+  <string name="scan_the_qr_code">ស្កេនកូដ QR</string>
+  <string name="alternate_privacy_policy">ឬចូលទៅកាន់ http://www.google.com/policies/privacy</string>
+  <string name="alternate_tos">ឬចូលទៅកាន់ https://www.google.com/mobile/toscountry</string>
+</resources>

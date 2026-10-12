@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Before each search for code, you should review this file to help you find code for a specific function [CORE_ARCHITECTURE.md](mdc:CORE_ARCHITECTURE.md)
