@@ -1,6 +1,7 @@
-# FocalFlow manual testing launcher
+# FocalFlow normal and manual launchers
 
-Run from this repository through `scripts/run-manual.sh`; no deployment to an
+Run normally through `scripts/run.sh`, or start a bounded test through
+`scripts/run-manual.sh`; no deployment to an
 author-specific directory is needed. The three sibling entry files remain together,
 and `manual_test.py` checks its sibling runtime SHA-256. The launcher is macOS/Darwin
 only. Setup and operator paths are in [setup](../../../docs/setup.md).
@@ -12,13 +13,16 @@ receiving ROLE, and successfully sending SESSION_READY. The readiness control
 event does not count as a business failure/success or a chat/TTS call. Confirmation
 sent is host-side evidence; phone application and actual task success remain
 unobserved until separately checked. It uses the operator-selected private configuration,
-BURGER_PRESET and original 24 chat / 12 TTS / 600 second runner limits. No endpoint,
-prompt or task selection was changed. The selected chat model is read from the
+BURGER_PRESET. Manual mode retains the original 24 chat / 12 TTS / 600 second
+session limits; normal mode keeps counts but has no session-wide caps. Both modes
+retain the 120-second analysis-request deadline. Mode selection leaves the
+configured endpoints and task preset unchanged. The selected chat model is read from the
 explicit approved private configuration, validated as an identifier and forwarded
 unchanged. The selected official chat configuration uses
 `FOCALFLOW_CHAT_API_URL=https://api.openai.com/v1/chat/completions` and
 `FOCALFLOW_CHAT_MODEL=gpt-6-luna`. Credentials stay only in the operator's private configuration. For exactly `gpt-6-luna`, requests
-use `max_completion_tokens=2048` and `reasoning_effort=none`, without the legacy
+use `max_completion_tokens=2048` for general calls and `8192` for classification,
+with `reasoning_effort=none`, without the legacy
 `temperature` or `seed` fields. Other models retain the original request fields.
 Text and image content are forwarded unchanged. See the
 [official model documentation](https://developers.openai.com/api/docs/models/gpt-6-luna)
@@ -36,8 +40,11 @@ from exception types and errno, never their URL/header/body/text.
 
 The launcher holds a write end of an EOF pipe to an independent guardian. Closing
 Terminal, SIGINT, SIGTERM, SIGHUP or killing the launcher closes that pipe. The
-guardian independently enforces the 600 second wall budget from its own start,
-including backend import/constructor startup. It observes leader exit with Darwin
+guardian independently enforces the manual mode's 600 second wall budget from its
+own start, including backend import/constructor startup. Normal mode disables
+this cap and the runtime's matching cap. The validated mode is passed explicitly
+through launcher, guardian, child and runtime; it is not selected by an environment
+variable. Both modes observe leader exit with Darwin
 `waitid(WNOWAIT)` without reaping the owned leader. Both an already exited leader
 and a cooperative STOP therefore retain the PID/PGID ownership anchor until
 TERM/KILL cleanup of the whole owned group completes; unrelated groups are not
@@ -63,6 +70,7 @@ Offline checks:
 
 ```sh
 python -B tools/manual_testing/manual_test.py --check
+../scripts/run.sh --check
 python -B -m unittest tests.test_launcher_lifecycle -v
 ```
 

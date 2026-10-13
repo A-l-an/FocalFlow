@@ -66,7 +66,7 @@ build instructions are in [setup](docs/setup.md#android-build). The integrated s
 existing caches; the APK was not installed. Use a dedicated test phone; the app ID
 may conflict with an installed reader's signature.
 
-## Try the phone-first manual flow on macOS
+## Run the phone-first burger flow on macOS
 
 The live launcher needs ADB, microphone/output permissions, cached Whisper `base`
 weights and the extra [live dependencies](docs/setup.md#python-environments).
@@ -79,13 +79,17 @@ incur provider charges. The launcher inherits your proxy/CA settings.
 export FOCALFLOW_CONFIG=/absolute/path/outside/repository/providers.env
 export FOCALFLOW_ADB=/absolute/path/to/adb
 # Enable FocalFlow on the phone first, then start the computer:
-./scripts/run-manual.sh
+./scripts/run.sh
 ```
 
 The phone initially waits with filtering inactive. A matching `SESSION_READY`
 handshake is required before capture; then leave settings and navigate the task
-app yourself. The manual entry retains the burger preset and **24 chat / 12 TTS /
-600 second** limit. Direct `backend/run.py` retains its hospital preset default.
+app yourself. The normal entry uses the burger preset and runs until you stop it,
+without session-wide time or chat/TTS call caps. Each analysis request retains its
+120-second deadline. For a bounded test round, use `./scripts/run-manual.sh`;
+it retains **24 chat / 12 TTS / 600 second** limits. Direct `backend/run.py` retains
+its hospital preset default. Use `./scripts/run.sh --check` for an offline entry
+check without phone, credentials or API calls.
 
 Use **Ctrl+C** to stop and check that FocalFlow is off on the phone. The TalkBack
 menu offers **Use standard browsing (pause AI)** and **Enable AI filtering**.

@@ -253,7 +253,7 @@ class GuardianCleanupFailureTests(unittest.TestCase):
             self.assertNotIn('PRIVATE',json.dumps(report))
 
 class LauncherMainTests(unittest.TestCase):
-    def build_case(self, root, reachable, stop_failure=False):
+    def build_case(self, root, reachable, stop_failure=False, launch_mode='manual'):
         import hashlib
         module=load();copy=root/'manual_test.py'
         config=root/'providers.env';config.write_text('synthetic non-secret fixture');config.chmod(0o600)
@@ -262,10 +262,14 @@ from pathlib import Path
 ART=None
 TARGET=None
 def parse_config(text):return {'FOCALFLOW_CHAT_API_URL':'https://synthetic.invalid/chat'}
-def live_main():
- (ART/'worker.pid').write_text(str(os.getpid()))
+def limits_for_mode(mode):
+ if mode not in ('manual','normal'):raise RuntimeError('UNKNOWN_ARGUMENT')
+ return (600,24,12) if mode=='manual' else (None,None,None)
+def live_main(*,mode='manual'):
+ (ART/'worker-mode.json').write_text(json.dumps({'mode':mode}))
  (ART/'proxy.json').write_text(json.dumps({key:os.environ.get(key) for key in ('HTTPS_PROXY','NO_PROXY')}))
  (ART/'live-events.jsonl').write_text(json.dumps({'event':'runner_ready','event_id':1,'time_utc':'2026-10-12T15:00:00Z'})+'\\n')
+ (ART/'worker.pid').write_text(str(os.getpid()))
  while not (ART/'STOP').exists():time.sleep(.05)
  return 0
 """)
@@ -316,7 +320,8 @@ class Session:
  def merge_environment_settings(self,*a):return {'proxies':{},'stream':True,'verify':True,'cert':None}
  def get(self,*a,**kw):
 """+('  return Response()\n' if reachable else "  e=requests.exceptions.ConnectionError('PRIVATE_HOST_TOKEN');e.__cause__=socket.gaierror(8,'PRIVATE_HOST_TOKEN');raise e\n")+" def close(self):pass\nrequests.Session=Session\n")
-        process=subprocess.Popen([sys.executable,'-B',str(copy)],env=dict(os.environ,PYTHONPATH=str(root),HTTPS_PROXY='http://synthetic.proxy:8877',NO_PROXY='synthetic.local'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        arguments = [] if launch_mode == 'manual' else ['--mode', launch_mode]
+        process=subprocess.Popen([sys.executable,'-B',str(copy)]+arguments,env=dict(os.environ,PYTHONPATH=str(root),HTTPS_PROXY='http://synthetic.proxy:8877',NO_PROXY='synthetic.local'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         return process,state
 
     def test_dns_startup_failure_is_printed_even_if_runner_exits_before_poll(self):

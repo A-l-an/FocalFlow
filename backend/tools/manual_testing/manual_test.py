@@ -21,7 +21,7 @@ import time
 SOURCE = Path(__file__).resolve().parents[2]
 BASE = Path(os.environ.get('FOCALFLOW_STATE_DIR', str(Path.home() / 'Library/Application Support/FocalFlow'))).expanduser()
 RUNNER = Path(__file__).with_name('live_backend.py')
-RUNNER_SHA = 'e6bf978489d4e66252767afe279b2159c7d33d5806bf5a26a2f84a54702910a6'
+RUNNER_SHA = '19443b1493d135d8fae8d6ca78de70568c27f560f36fd07317e128d1d8f0d8c5'
 PYTHON = os.environ.get('FOCALFLOW_PYTHON', sys.executable)
 CONFIG = Path(os.environ.get('FOCALFLOW_CONFIG', str(Path.home() / '.config/focalflow/providers.env'))).expanduser()
 ADB = os.environ.get('FOCALFLOW_ADB') or shutil.which('adb') or 'adb'
@@ -45,9 +45,24 @@ def safe_code(value, allowed, fallback='UNKNOWN'):
     return value if isinstance(value, str) and value in allowed else fallback
 
 
+def mode_arguments(arguments):
+    args = list(arguments)
+    mode = 'manual'
+    if '--mode' in args:
+        if args.count('--mode') != 1: raise RuntimeError('UNKNOWN_ARGUMENT')
+        position = args.index('--mode')
+        if position + 1 >= len(args): raise RuntimeError('UNKNOWN_ARGUMENT')
+        mode = args.pop(position + 1)
+        args.pop(position)
+    if mode not in ('manual', 'normal'): raise RuntimeError('UNKNOWN_ARGUMENT')
+    return mode, args
+
+
 class ConsoleEvents:
     """Only allowlisted metadata reaches the Terminal; one line per logical failure."""
-    def __init__(self):
+    def __init__(self, *, mode='manual'):
+        if mode not in ('manual', 'normal'): raise RuntimeError('UNKNOWN_ARGUMENT')
+        self.mode = mode
         self.failures = 0
         self.counts = {'chat': 0, 'tts': 0}
         self.awaiting_error_reply = None
@@ -91,6 +106,7 @@ class ConsoleEvents:
         if type(status) is int and 100 <= status <= 599: details += ' / HTTP %d' % status
         if code == 'OUTPUT_TRUNCATED': action = '模型回复达到输出上限，内容不完整；这次分析未完成。'
         elif code == 'PORT_IN_USE': action = '电脑监听端口被占用，后端未启动；确认上一轮已完全停止后再重启。'
+        elif code == 'RUNNER_CHANGED': action = '启动器文件校验失败，后端未启动；请恢复匹配的程序文件后重试。'
         elif code == 'INVALID_OUTPUT': action = '返回数据未通过格式或节点校验；这次分析未完成。'
         elif cause == 'PROXY_ERROR': action = '检查电脑代理是否运行，并确认代理可访问已配置的模型服务。'
         elif cause == 'DNS_ERROR': action = '已配置的模型接口域名无法解析；检查电脑 DNS 与网络，恢复后重新启动本轮。'
@@ -98,7 +114,8 @@ class ConsoleEvents:
         elif code in ('NETWORK_ERROR', 'NETWORK_TIMEOUT'): action = '检查电脑网络与代理；这次模型请求未成功。'
         elif code == 'HTTP_ERROR' and status in (401, 403): action = '检查已保存的服务凭据与授权。'
         elif code == 'HTTP_ERROR' and status == 429: action = '检查服务额度，稍后再启动本轮。'
-        elif code == 'LIVE_CALL_LIMIT': action = '本轮调用上限已到；停止后再开始新一轮。'
+        elif code == 'LIVE_CALL_LIMIT': action = ('本轮调用上限已到；停止后再开始新一轮。'
+            if self.mode == 'manual' else '本次调用被阻止；请查看私有日志中的对应事件。')
         elif code == 'DEADLINE_EXCEEDED': action = '本轮请求超时；检查连接后再试。'
         else: action = '查看本轮私有日志中的对应事件，再检查电脑与手机连接。'
         return [prefix + ' ' + stage + ' 失败：' + details + '。' + action]
@@ -253,11 +270,13 @@ def stop_process(child, directory, grace=8):
     child.wait(timeout=5)
 
 
-def run_guardian(directory, parent_fd, runner_command, adb=ADB, stop_grace=8):
+def run_guardian(directory, parent_fd, runner_command, adb=ADB, stop_grace=8, *, mode='manual', clock=None):
     """Survives Terminal/launcher death; inherited EOF pipe proves operator liveness."""
+    if mode not in ('manual', 'normal'): raise RuntimeError('UNKNOWN_ARGUMENT')
     os.umask(0o077)
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-    started = time.monotonic()
+    now = clock or time.monotonic
+    started = now()
     child = None
     reason, result = 'child_exit', 1
     target = json.loads((directory / 'target.json').read_text())
@@ -265,11 +284,17 @@ def run_guardian(directory, parent_fd, runner_command, adb=ADB, stop_grace=8):
     if not isinstance(serial, str) or not re.fullmatch(r'[A-Za-z0-9._:-]+', serial):
         raise RuntimeError('TARGET_FORMAT')
     try:
+        try:
+            wall_seconds = runner_module().limits_for_mode(mode)[0]
+        except Exception as error:
+            reason = 'start_failed'
+            startup_failure(directory, error)
+            return 1
         child = subprocess.Popen(runner_command, stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         (directory / 'runner-pid.json').write_text(json.dumps({'pid': child.pid}))
         while not leader_exited(child):
-            if time.monotonic() - started >= 600:
+            if wall_seconds is not None and now() - started >= wall_seconds:
                 reason = 'wall_limit'
                 break
             ready, _, _ = select.select([parent_fd], [], [], 0.1)
@@ -309,30 +334,31 @@ def run_guardian(directory, parent_fd, runner_command, adb=ADB, stop_grace=8):
 
 def main():
     os.umask(0o077)
-    if len(sys.argv) == 4 and sys.argv[1] == '--guardian':
-        return run_guardian(Path(sys.argv[2]), int(sys.argv[3]),
-            [PYTHON, '-B', str(Path(__file__).resolve()), '--child', sys.argv[2]])
-    if sys.argv[1:] == ['--check']:
+    mode, arguments = mode_arguments(sys.argv[1:])
+    if len(arguments) == 3 and arguments[0] == '--guardian':
+        return run_guardian(Path(arguments[1]), int(arguments[2]),
+            [PYTHON, '-B', str(Path(__file__).resolve()), '--child', arguments[1], '--mode', mode], mode=mode)
+    if arguments == ['--check']:
         module = runner_module()
         with tempfile.TemporaryDirectory(prefix='focalflow-manual-offline-') as folder:
-            module.ART = Path(folder); module.selftest()
+            module.ART = Path(folder); module.selftest(mode=mode)
         print('启动器离线检查通过；未连接手机、未读取密钥、未调用 API。')
         return 0
-    if sys.argv[1:] == ['--network-check']:
+    if arguments == ['--network-check']:
         module = preflight()
         values = module.parse_config(CONFIG.read_text())
         print(json.dumps(probe_chat_endpoint(values['FOCALFLOW_CHAT_API_URL'])))
         return 0
-    if len(sys.argv) == 3 and sys.argv[1] == '--child':
-        directory = Path(sys.argv[2])
+    if len(arguments) == 2 and arguments[0] == '--child':
+        directory = Path(arguments[1])
         try:
             module = preflight(); module.parse_config(CONFIG.read_text()); network_preflight()
         except Exception as error:
             startup_failure(directory, error)
             return 1
         module.ART = directory; module.TARGET = module.ART / 'target.json'
-        return module.live_main()
-    if sys.argv[1:]: raise RuntimeError('UNKNOWN_ARGUMENT')
+        return module.live_main(mode=mode)
+    if arguments: raise RuntimeError('UNKNOWN_ARGUMENT')
     # Discover the phone before preflight so startup failures still have safe cleanup.
     devices = subprocess.run([ADB, 'devices'], capture_output=True, text=True, timeout=10)
     if devices.returncode: raise RuntimeError('ADB_UNAVAILABLE')
@@ -343,7 +369,7 @@ def main():
     serial = targets[0]
     if not re.fullmatch(r'[A-Za-z0-9._:-]+', serial): raise RuntimeError('TARGET_FORMAT')
     guardian, control_write, directory = None, None, None
-    console = ConsoleEvents()
+    console = ConsoleEvents(mode=mode)
     printed = 0
     exit_code = 0
     try:
@@ -359,7 +385,7 @@ def main():
         environment = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
         control_read, control_write = os.pipe()
         try:
-            guardian = subprocess.Popen([PYTHON, '-B', str(Path(__file__).resolve()), '--guardian', str(directory), str(control_read)],
+            guardian = subprocess.Popen([PYTHON, '-B', str(Path(__file__).resolve()), '--guardian', str(directory), str(control_read), '--mode', mode],
                 env=environment, pass_fds=(control_read,), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL, start_new_session=True)
         finally: os.close(control_read)
@@ -367,7 +393,8 @@ def main():
         def stop(number=None, frame=None): stop_requested[0] = True
         for number in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP): signal.signal(number, stop)
         print('先在手机开启 FocalFlow，再启动电脑程序；手机可提前等待连接。', flush=True)
-        print('正在启动点汉堡任务。每轮最多 10 分钟、24 次聊天和 12 次 TTS；Ctrl+C 停止并关闭手机 FocalFlow。', flush=True)
+        print('正在启动点汉堡任务。每轮最多 10 分钟、24 次聊天和 12 次 TTS；Ctrl+C 停止并关闭手机 FocalFlow。'
+              if mode == 'manual' else '正在启动日常点汉堡任务，持续运行；Ctrl+C 停止并关闭手机 FocalFlow。', flush=True)
         print('本轮私有日志：' + str(directory), flush=True)
         printed = 0
         while guardian.poll() is None and not stop_requested[0]:
@@ -383,7 +410,7 @@ def main():
                 print('退出清理仍在进行；请查看本轮日志。', flush=True)
         if directory is not None:
             printed = print_events(directory, console, printed)
-            (directory / 'manual-summary.json').write_text(json.dumps(dict(console.counts, failures=console.failures, backend_session_ready=console.connected)) + '\n')
+            (directory / 'manual-summary.json').write_text(json.dumps(dict(console.counts, mode=mode, failures=console.failures, backend_session_ready=console.connected)) + '\n')
         cleanup, runner_cleanup = None, None
         if directory is not None and (directory / 'guardian-cleanup.json').exists():
             report = json.loads((directory / 'guardian-cleanup.json').read_text())
@@ -396,7 +423,10 @@ def main():
             else: print('USB 清理未确认，请在手机无障碍设置中关闭 FocalFlow。', flush=True)
         elif cleanup == 'DISABLED': print('电脑端已停止，手机 FocalFlow 无障碍服务已关闭。', flush=True)
         else: print('电脑端已停止；USB 清理未确认，请在手机无障碍设置中关闭 FocalFlow。', flush=True)
-        print('本轮计数：聊天 %d/24，TTS %d/12，失败 %d。' % (console.counts['chat'],console.counts['tts'],console.failures), flush=True)
+        if mode == 'manual':
+            print('本轮计数：聊天 %d/24，TTS %d/12，失败 %d。' % (console.counts['chat'],console.counts['tts'],console.failures), flush=True)
+        else:
+            print('本次计数：聊天 %d，TTS %d，失败 %d。' % (console.counts['chat'],console.counts['tts'],console.failures), flush=True)
         if directory is not None: print('私有日志：' + str(directory), flush=True)
     return exit_code
 

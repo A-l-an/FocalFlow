@@ -40,7 +40,7 @@ preference are retained. No weights are included or downloaded by offline checks
 
 Prepare your own config outside the repository and set its permission to 600.
 [The example](../backend/tools/manual_testing/providers.env.example) lists exactly
-the seven fields accepted by the bounded runtime:
+the seven fields accepted by both live entry modes:
 
 | Field | Purpose |
 | --- | --- |
@@ -53,7 +53,8 @@ the seven fields accepted by the bounded runtime:
 | `OPENAI_TTS_VOICE` | Existing runtime requires `nova` |
 
 The selected official chat model is `gpt-6-luna`. Exactly that ID uses
-`max_completion_tokens=2048` and `reasoning_effort=none`, omitting legacy
+`max_completion_tokens=2048` for general calls and `8192` for classification,
+with `reasoning_effort=none`, omitting legacy
 `temperature`/`seed`; other models retain their original payload fields. Text and
 image messages remain unchanged. This is configuration/payload behavior, not a
 live availability or pricing guarantee.
@@ -65,8 +66,15 @@ are invalid. Set a path to an independently prepared file:
 export FOCALFLOW_CONFIG=/absolute/path/outside/repository/providers.env
 export FOCALFLOW_PYTHON=/absolute/path/to/python3.8
 export FOCALFLOW_ADB=/absolute/path/to/adb
-./scripts/run-manual.sh
+./scripts/run.sh
 ```
+
+The normal entry keeps running until you stop it, without session-wide time or
+chat/TTS call caps. Each request still has a 120-second deadline. Use
+`./scripts/run-manual.sh` for the original 600-second, 24-chat, 12-TTS test round.
+Both entries use the burger preset and the same preflight and guardian cleanup.
+`./scripts/run.sh --check` verifies the entry offline without phone, credentials
+or API calls.
 
 | Setting | Default / scope |
 | --- | --- |
@@ -110,11 +118,13 @@ a dedicated test phone with USB debugging authorization and a local escape route
 
 ## Phone-first trial and stopping
 
-Enable FocalFlow on the phone before starting the bounded launcher. It waits
+Enable FocalFlow on the phone before starting either launcher. It waits
 locally with filtering inactive until a matching SESSION_READY arrives. Leave
 settings for the task app, then navigate yourself. Ctrl+C stops the launcher;
 Terminal closure, SIGHUP or launcher/runner death also trigger guardian cleanup.
-The guardian's independent wall cap is 600 seconds. Phone-side acknowledged-session
+The guardian and runtime each enforce a 600-second wall cap in manual mode.
+Normal mode disables only these session-wide caps and keeps the same exit cleanup.
+Phone-side acknowledged-session
 EOF requests service shutdown; the selected baseline still has a capture race.
 
 The TalkBack menu's pause AI action keeps standard browsing; resume starts a fresh

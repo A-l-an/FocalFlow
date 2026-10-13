@@ -29,6 +29,25 @@ PROTOCOL_TYPES = frozenset(('ROLE', 'SESSION_READY', 'INVALIDATE_CONTEXT', 'REQU
                             'REQUEST_TALK', 'UI_UPDATE', 'TALK_RESPONSE'))
 
 
+def limits_for_mode(mode):
+    if not isinstance(mode, str) or mode not in ('manual', 'normal'):
+        raise RuntimeError('UNKNOWN_ARGUMENT')
+    return (600, 24, 12) if mode == 'manual' else (None, None, None)
+
+
+def mode_arguments(arguments):
+    args = list(arguments)
+    mode = 'manual'
+    if '--mode' in args:
+        if args.count('--mode') != 1: raise RuntimeError('UNKNOWN_ARGUMENT')
+        position = args.index('--mode')
+        if position + 1 >= len(args): raise RuntimeError('UNKNOWN_ARGUMENT')
+        mode = args.pop(position + 1)
+        args.pop(position)
+    limits_for_mode(mode)
+    return mode, args
+
+
 def parse_config(text):
     values = {}
     for line in text.splitlines():
@@ -122,7 +141,7 @@ def install_call_wrappers(run, emit, model, chat_limit=24, tts_limit=12, evidenc
 
     def invoke(stage, limit, function, args, kwargs):
         # The production state worker serializes these logical calls.
-        if counts[stage] >= limit:
+        if limit is not None and counts[stage] >= limit:
             error = run.OperationError(stage, 'LIVE_CALL_LIMIT')
             emit('call_failure', **dict(error_metadata(error), stage=stage))
             raise error
@@ -255,7 +274,9 @@ def observe_listener(listener, run, emit, evidence=None):
     listener.acquire = acquired
 
 
-def live_main():
+def live_main(*, mode='manual', clock=None):
+    wall_seconds, chat_limit, tts_limit = limits_for_mode(mode)
+    now = clock or time.monotonic
     os.umask(0o077)
     sys.dont_write_bytecode = True
     # Write metadata only to the private event file; discard Python and native output.
@@ -285,7 +306,7 @@ def live_main():
     monitor = None
     runtime = None
     previous_cwd = os.getcwd()
-    started = time.monotonic()
+    started = now()
 
     def on_signal(number, frame):
         signal_seen[0] = True
@@ -294,7 +315,7 @@ def live_main():
     signal.signal(signal.SIGTERM, on_signal)
     signal.signal(signal.SIGINT, on_signal)
     signal.signal(signal.SIGHUP, on_signal)
-    emit('runner_starting', chat_limit=24, tts_limit=12, wall_seconds=600)
+    emit('runner_starting', mode=mode, chat_limit=chat_limit, tts_limit=tts_limit, wall_seconds=wall_seconds)
     try:
         if (ART / 'STOP').exists():
             emit('runner_stopped', reason='stop_file_before_start')
@@ -317,7 +338,8 @@ def live_main():
         import run
         evidence_dir = ART / 'private-evidence' / ('run-' + time.strftime('%Y%m%dT%H%M%S') + '-%d' % os.getpid())
         evidence = lambda name, build: save_evidence(evidence_dir, emit, name, build)
-        install_call_wrappers(run, emit, os.environ['FOCALFLOW_CHAT_MODEL'], evidence=evidence)
+        install_call_wrappers(run, emit, os.environ['FOCALFLOW_CHAT_MODEL'],
+                              chat_limit=chat_limit, tts_limit=tts_limit, evidence=evidence)
         agent = run.MobileAgentStateMachine(task_preset=run.BURGER_PRESET)
         listener = run.UIListener(agent, run.adb_path)
         observe_listener(listener, run, emit, evidence=evidence)
@@ -327,7 +349,7 @@ def live_main():
             while True:
                 reason = ('signal' if signal_seen[0] else 'stop_file'
                           if (ART / 'STOP').exists() else 'wall_limit'
-                          if time.monotonic() - started >= 600 else None)
+                          if wall_seconds is not None and now() - started >= wall_seconds else None)
                 if reason:
                     emit('runner_stopping', reason=reason)
                     stopped.set()
@@ -367,8 +389,9 @@ def live_main():
         events.close()
 
 
-def selftest():
+def selftest(*, mode='manual'):
     """Offline fake module only: not an API, audio, socket, or phone test."""
+    limits_for_mode(mode)
     class OperationError(RuntimeError):
         def __init__(self, stage, code):
             self.stage, self.code = stage, code
@@ -493,9 +516,10 @@ def selftest():
 
 
 if __name__ == '__main__':
-    if sys.argv[1:] == ['--selftest']:
-        selftest()
-    elif not sys.argv[1:]:
-        sys.exit(live_main())
+    mode, arguments = mode_arguments(sys.argv[1:])
+    if arguments == ['--selftest']:
+        selftest(mode=mode)
+    elif not arguments:
+        sys.exit(live_main(mode=mode))
     else:
         raise SystemExit('Use no arguments for live mode, or --selftest for offline verification.')

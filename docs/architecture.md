@@ -67,16 +67,19 @@ forcibly preempted by cancellation.
 
 `run.py` as a script is an unbounded live entry with its original hospital task
 preset and exported API configuration. `tools/manual_testing/manual_test.py` is
-the bounded macOS entry: it creates private round storage, discovers one ADB test
+the shared macOS launcher: it creates private session storage, discovers one ADB
 phone, starts an independent guardian and launches its sibling `live_backend.py`.
-That runtime uses the burger preset and 24 chat / 12 TTS / 600 second caps.
+Both modes use the burger preset. `scripts/run.sh` selects normal mode without
+session-wide caps; `scripts/run-manual.sh` defaults to manual mode with 24 chat /
+12 TTS / 600 second caps. Mode is validated and passed explicitly through guardian,
+child and runtime. The 120-second request deadline remains in both modes.
 
 The guardian observes the launcher through an inherited EOF pipe. It retains an
 unreaped Darwin PID/PGID anchor while stopping its owned process group and has its
-own wall deadline. Cleanup removes only FocalFlow's modern and legacy own components
+own wall deadline in manual mode. Cleanup removes only FocalFlow's modern and legacy own components
 from the enabled accessibility-service list, preserving other services. Cleanup
 failures report sanitized status. This is not a portability layer for other OSes.
 
 Directory integration changes only local discovery/configuration and documentation.
-The protocol, models, prompts, presets, limits and Android production files retain
-the selected source baseline's behavior.
+Normal/manual mode selection changes session-wide limits; the protocol, presets,
+per-request limits and Android production behavior are unaffected by that selection.
