@@ -150,17 +150,23 @@ def scoped_index(index, areas):
 
 def categories(value, index):
     require(isinstance(value, dict) and bool(value), 'invalid categories')
+    canonical = {}
     for name, members in value.items():
         require(isinstance(name, str) and bool(name.strip()) and name == name.strip(), 'invalid category name')
         require(isinstance(members, dict) and bool(members), 'invalid category members')
         references(list(members), index)
+        canonical_members = {}
         for alias, info in members.items():
-            require(isinstance(info, dict) and set(info) == {'text'}, 'invalid category text')
+            require(isinstance(info, dict) and set(info) in ({'text'}, {'name', 'text'}), 'invalid category text')
+            if 'name' in info:
+                require(isinstance(info['name'], str) and info['name'] == alias, 'invalid category identity')
             # Preserve explicit native nulls without coercing model or source values.
             require(isinstance(info['text'], str) or (
                 info['text'] is None and 'text' in index[alias] and index[alias]['text'] is None),
                 'invalid category text')
-    return value
+            canonical_members[alias] = {'text': info['text']}
+        canonical[name] = canonical_members
+    return canonical
 
 
 def selections(value, index):

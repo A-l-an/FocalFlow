@@ -96,7 +96,9 @@ class OutputValidationTests(unittest.TestCase):
                 selected = [{'action_point': 'element-open',
                              'context_elements': [{'name': 'element-title', 'text': text}]}]
                 before = json.dumps([source, grouped, selected], ensure_ascii=False).encode('utf-8')
-                self.assertIs(categories(grouped, index), grouped)
+                normalized = categories(grouped, index)
+                self.assertEqual(normalized, grouped)
+                self.assertIsNot(normalized, grouped)
                 self.assertEqual(selections(selected, index), ['element-open', 'element-title'])
                 self.assertEqual(json.dumps([source, grouped, selected], ensure_ascii=False).encode('utf-8'), before)
 
