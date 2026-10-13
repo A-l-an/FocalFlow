@@ -135,13 +135,14 @@ def text2audio_old(text, API_TOKEN=None, guard=None, policy=None):
 
 def text2audio(text, API_TOKEN=None, guard=None, policy=None):
     api_token = _resolve_api_token(API_TOKEN, "OPENAI_API_KEY")
-    from openai import OpenAI, DefaultHttpxClient
+    import openai
     import httpx
     budget = CallBudget(policy, guard)
     budget.check()
     connect, read = budget.http_timeout()
     client, http_client = None, None
     hook_failure = [None]
+    receiving_audio = False
     def response_boundary(response):
         # SDK 1.52 reads non-2xx error bodies eagerly before returning its stream.
         # This public HTTPX hook rejects/closes them before that SDK branch.
@@ -155,16 +156,18 @@ def text2audio(text, API_TOKEN=None, guard=None, policy=None):
             raise
     try:
         timeout = httpx.Timeout(connect=connect, read=read, write=read, pool=connect)
-        http_client = DefaultHttpxClient(timeout=timeout, follow_redirects=False, event_hooks={'response': [response_boundary]})
-        client = OpenAI(api_key=api_token, max_retries=0, http_client=http_client, timeout=timeout)
+        http_client = openai.DefaultHttpxClient(timeout=timeout, follow_redirects=False, event_hooks={'response': [response_boundary]})
+        client = openai.OpenAI(api_key=api_token, max_retries=0, http_client=http_client, timeout=timeout)
         with tempfile.TemporaryDirectory(prefix="focalflow-tts-") as directory:
             path = Path(directory) / 'audio_output.mp3'
             budget.check()
+            receiving_audio = True
             with client.audio.speech.with_streaming_response.create(
                     model="gpt-4o-mini-tts", voice="nova", input=text) as response:
                 # Installed SDK context closes the HTTP response. Iterate explicitly
                 # to bound total bytes/time even when the provider trickles data.
                 audio = checked_bytes(response.iter_bytes(chunk_size=None), budget, 32 * 1024 * 1024, 'tts')
+                receiving_audio = False
                 if not audio: raise OperationError('tts', 'EMPTY_AUDIO')
                 path.write_bytes(audio)
             budget.check()
@@ -173,13 +176,39 @@ def text2audio(text, API_TOKEN=None, guard=None, policy=None):
             budget.check()
     except (Cancelled, DeadlineExceeded, OperationError):
         raise
-    except Exception:
+    except Exception as error:
         # SDK wraps response-hook exceptions. Preserve interruption and our safe
         # HTTP status instead of exposing or inheriting the SDK exception chain.
         try: budget.check()
         except (Cancelled, DeadlineExceeded) as interrupted: raise interrupted from None
         if hook_failure[0] is not None: raise hook_failure[0] from None
-        raise OperationError('tts', 'PROVIDER_ERROR') from None
+        code = 'PROVIDER_ERROR'
+        # Only classify failures while requesting/downloading audio. Native audio
+        # and local file failures must not be attributed to the network.
+        if receiving_audio:
+            # SDK 1.52 wraps any request exception as APIConnectionError. Follow
+            # its explicit chain so local/programming errors remain non-network.
+            network_error = error
+            for _ in range(16):
+                if not isinstance(network_error, openai.APIConnectionError): break
+                cause = network_error.__cause__
+                if cause is None and not network_error.__suppress_context__:
+                    cause = network_error.__context__
+                if cause is None: break
+                network_error = cause
+            else:
+                network_error = None
+            if isinstance(network_error, (openai.APITimeoutError, httpx.TimeoutException)):
+                code = 'NETWORK_TIMEOUT'
+            elif isinstance(network_error, (openai.APIConnectionError, httpx.NetworkError,
+                                            httpx.ProxyError, httpx.RemoteProtocolError)):
+                code = 'NETWORK_ERROR'
+        failure = OperationError('tts', code)
+        if code != 'PROVIDER_ERROR':
+            failure.cause_code = network_cause_code(network_error, typed_only=True)
+            if code == 'NETWORK_TIMEOUT' and failure.cause_code == 'CONNECTION_ERROR':
+                failure.cause_code = 'TIMEOUT'
+        raise failure from None
     finally:
         if client is not None: _close_http_resource(client, 'tts')
         elif http_client is not None: _close_http_resource(http_client, 'tts')
@@ -303,11 +332,17 @@ def get_voice(model, initial_prompt=None, guard=None):
             raise OperationError('voice', 'RECORDING_FAILED') from None
 
 
-def network_cause_code(error):
-    """Classify exception types/errno only; never inspect provider URLs or text."""
+def network_cause_code(error, *, typed_only=False):
+    """Classify types/errno; TTS uses typed_only for the active HTTPX chain."""
     import errno
     import socket
     import ssl
+    if typed_only:
+        import httpx
+        network_types = ((httpx.ProxyError, 'ProxyError'),
+                         (httpx.ConnectTimeout, 'ConnectTimeout'),
+                         (httpx.ReadTimeout, 'ReadTimeout'),
+                         (httpx.TimeoutException, 'Timeout'))
     pending, seen = [error], set()
     fallback = 'CONNECTION_ERROR'
     for _ in range(16):
@@ -315,21 +350,27 @@ def network_cause_code(error):
         item = pending.pop(0)
         if not isinstance(item, BaseException) or id(item) in seen: continue
         seen.add(id(item))
-        name = type(item).__name__
+        name = (next((label for kind, label in network_types if isinstance(item, kind)), '')
+                if typed_only else type(item).__name__)
         if name == 'ProxyError': return 'PROXY_ERROR'
         if isinstance(item, ssl.SSLError) or name == 'SSLError': return 'TLS_ERROR'
         if isinstance(item, socket.gaierror) or name == 'NameResolutionError': return 'DNS_ERROR'
         if name == 'ConnectTimeout': return 'CONNECT_TIMEOUT'
         if name in ('ReadTimeout', 'ReadTimeoutError'): return 'READ_TIMEOUT'
         if isinstance(item, TimeoutError) or name in ('Timeout', 'TimeoutError'): fallback = 'TIMEOUT'
-        code = getattr(item, 'errno', None)
+        code = getattr(item, 'errno', None) if not typed_only or isinstance(item, OSError) else None
         if code == errno.ECONNREFUSED: return 'CONNECTION_REFUSED'
         if code == errno.ECONNRESET: return 'CONNECTION_RESET'
         if code in (errno.ENETUNREACH, errno.EHOSTUNREACH): return 'NETWORK_UNREACHABLE'
-        pending.extend([item.__cause__, item.__context__])
-        pending.extend(arg for arg in item.args if isinstance(arg, BaseException))
-        reason = getattr(item, 'reason', None)
-        if isinstance(reason, BaseException): pending.append(reason)
+        if typed_only:
+            cause = item.__cause__
+            if cause is None and not item.__suppress_context__: cause = item.__context__
+            pending.append(cause)
+        else:
+            pending.extend([item.__cause__, item.__context__])
+            pending.extend(arg for arg in item.args if isinstance(arg, BaseException))
+            reason = getattr(item, 'reason', None)
+            if isinstance(reason, BaseException): pending.append(reason)
     return fallback
 
 
