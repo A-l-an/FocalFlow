@@ -58,7 +58,7 @@ class TaskPresetTests(unittest.TestCase):
             drive(agent)
         self.assertEqual(calls, self.expected('hospital'))
 
-    def test_default_preserves_complete_original_prompts_and_models(self):
+    def test_default_preserves_complete_expected_prompts_and_models(self):
         self.assertEqual(runtime.flag_burger, 0)
         agent, calls, _ = make_agent()
         drive(agent)

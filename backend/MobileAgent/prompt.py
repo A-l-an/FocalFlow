@@ -150,7 +150,7 @@ def get_classify_prompt(instruction, current_subtask, element_json, add_info):
     prompt += "### Thought ###\n"
     prompt += "Please provide your decision-making analysis process in **Chinese**. First, explain how you defined the semantic categories and classified all elements based on their content. Then, for each input card, explain how you selected the most appropriate clickable element and, crucially, why you decided to include (or not include) context elements based on the new rules.\n\n"
     prompt += "### Categories ###\n"
-    prompt += "Output a JSON object to display your categorization results. Please ensure the integrity of the output json. The keys of this object will be your defined **Chinese category names**, and the values will be another JSON object containing the `name` and `text` of all elements within that category.\n\n"
+    prompt += "Output a complete JSON object mapping each **Chinese category name** to its elements. Each element's exact input identifier must be the key, and its value must contain only the `text` field: {\"Chinese category\": {\"exact_input_element_id\": {\"text\": \"element text\"}}}. Copy identifiers exactly from the input; never shorten, reconstruct, or invent them. Do not repeat a `name` field inside Categories entries. The `name` field remains required for context objects in SelectedUI below.\n\n"
     prompt += "### SelectedUI ###\n"
     prompt += "Output a **list of JSON objects**. Each object corresponds to one card and must contain two keys:\n"
     prompt += "1.  `action_point`: The `name` (string) of the single, most relevant and clickable element you selected for the action.\n"
