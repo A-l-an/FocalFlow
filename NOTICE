@@ -1,0 +1,13 @@
+FocalFlow source release
+
+Original FocalFlow source code and documentation are licensed under Apache-2.0;
+see the root LICENSE. Existing third-party terms and copyright notices remain
+applicable to their respective files and components.
+
+This source distribution includes Google TalkBack/Android accessibility code,
+BRLTTY and liblouis source/tables, and upstream resources. Their individual notices
+are retained. GNU license texts and scopes are in LICENSES/README.md; Android's
+Apache license and dated inventory remain in android/LICENSE and android/THIRD_PARTY.md.
+
+The root Apache license does not relicense GNU components, fonts, or other
+separately licensed third-party material. See docs/licensing-status.md.

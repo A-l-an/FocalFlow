@@ -100,6 +100,6 @@ The observed merchant-activation stall and paused startup/EOF issues remain in
 reproduction are not established. [Offline verification](docs/verification.md)
 and [source baseline](docs/source-baseline.md) describe the tested scope.
 
-This is a private IMWUT26 source-preparation candidate. A project-wide license
-is pending; preserved upstream notices and full GNU texts are described in
-[licensing status](docs/licensing-status.md) and [LICENSES](LICENSES/README.md).
+This IMWUT26 source release licenses original FocalFlow code and documentation
+under [Apache-2.0](LICENSE). Third-party terms and notices remain applicable;
+see [licensing scope](docs/licensing-status.md) and [LICENSES](LICENSES/README.md).

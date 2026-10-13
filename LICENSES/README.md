@@ -1,9 +1,10 @@
 # Third-party license texts
 
-These verbatim terms support separately licensed vendored Android/native source.
-They do **not** select a license for FocalFlow's original code or the Python backend.
-File-level notices and the corresponding component/table terms remain authoritative.
-The original Apache-2.0 text remains at [android/LICENSE](../android/LICENSE).
+Original FocalFlow code and documentation use the root [Apache-2.0 license](../LICENSE).
+The verbatim terms here apply to separately licensed vendored Android/native source;
+they do not relicense original FocalFlow code. File-level notices and component/table
+terms remain authoritative. The preserved Android Apache-2.0 text remains at
+[android/LICENSE](../android/LICENSE); see [NOTICE](../NOTICE) for distribution scope.
 
 | Text | Scope of referenced declarations |
 | --- | --- |
@@ -12,10 +13,11 @@ The original Apache-2.0 text remains at [android/LICENSE](../android/LICENSE).
 | [LGPL-3.0.txt](LGPL-3.0.txt) | Translation tables with LGPL-3.0-or-later notices; incorporates GPL3 terms |
 | [GPL-3.0.txt](GPL-3.0.txt) | Complete GPL3 terms accompanying LGPL3; does not relabel all liblouis code |
 
-Mixed table notices, source/relinking obligations, binary notice delivery and
-project contribution rights require their own review. Read the dated
+Table/font notices remain as supplied and are not replaced by the root Apache
+license. A future binary distribution must address its applicable source/relinking
+and notice-delivery obligations. Read the dated
 [Android inventory](../android/THIRD_PARTY.md) and current
-[licensing status](../docs/licensing-status.md).
+[licensing scope](../docs/licensing-status.md).
 
 ## Sources and exact copied-file hashes
 

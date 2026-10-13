@@ -1,5 +1,13 @@
 # Third-party provenance and redistribution inventory
 
+**Current source release (2026-10-13):** original FocalFlow source and documentation
+now use the root [Apache-2.0 license](../LICENSE). See the current
+[licensing scope](../docs/licensing-status.md) for third-party and distribution
+boundaries. The dated inventory below is preserved unchanged: its earlier absence
+of a project license and open publication questions describe that historical
+snapshot, not the current license selection. Dependencies and models keep their
+own terms; no blanket Apache grant is assigned to them.
+
 This is an offline, static inventory as of 2026-09-26, inspected at commit
 `b31058f974721761f8c15f35c98b699e46194ab1`. It records local evidence and open
 questions; it does not grant a project license, determine ownership, or approve

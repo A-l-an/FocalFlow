@@ -8,10 +8,11 @@ Google TalkBack 捕获无障碍树；Python 端结合任务、树和截图选出
 [架构](docs/architecture.md) · [协议](docs/protocol-v1.md) ·
 [已知问题](docs/known-issues.md)
 
-当前是 IMWUT26 开源准备用的**私有整合候选**，版权和项目许可证尚待确认。
-商家激活停滞、端口重启和 EOF 后捕获竞态仍保留；没有宣称完整点餐流程或论文
-实验复现。基线采用成对离线验证快照，与最后一次 Luna 实机运行的启动代码字节
-不同；详见[来源说明](docs/source-baseline.md)。
+这是 IMWUT26 公开源码版本，原创 FocalFlow 源码与文档采用
+[Apache-2.0](LICENSE)，第三方内容保留各自条款。商家激活停滞、端口重启和
+EOF 后捕获竞态仍保留；没有宣称完整点餐流程或论文实验复现。已确认采用成对
+离线验证快照，与最后一次 Luna 实机启动代码字节不同；详见
+[来源说明](docs/source-baseline.md)。
 
 目录分为 `backend/`、`android/`、`docs/` 和 `scripts/`。完整 Android Gradle
 模块、资源和上游许可保留，应用 ID 仍为 `com.android.talkback`。
@@ -47,5 +48,5 @@ export FOCALFLOW_PYTHON="$(pwd)/.venv/bin/python"
 [构建说明](docs/setup.md#android-build)使用完整 Android SDK/NDK；phone debug APK
 输出到 `android/build/outputs/apk/phone/debug/`。
 源码包不含实际用户/研究数据、权重、APK、签名材料和旧 Git 历史。
-[许可状态](docs/licensing-status.md)尚未确定；不要从 Android 上游许可证推断
-整个项目或 Python 端的再分发许可。
+[许可范围](docs/licensing-status.md)区分原创 Apache-2.0 内容与第三方 GNU、
+字体及资源条款；根许可证不替换第三方许可或原有声明。

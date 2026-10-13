@@ -1,9 +1,12 @@
-# Licensing status — private candidate
+# Licensing and source release scope
 
-A project-wide license remains a rights-holder decision. The imported Python
-backend has no project license grant file; none is inferred from dependency terms
-or the Android component. Contributor/institutional rights and the intended
-license for original FocalFlow code remain pending.
+Original FocalFlow source code and documentation are licensed under **Apache-2.0**.
+The complete terms are in the root [LICENSE](../LICENSE), with distribution scope
+in [NOTICE](../NOTICE).
+
+Existing third-party files, GNU components, fonts and resources retain their own
+applicable terms and copyright notices. The root Apache license does not replace
+or override them.
 
 ## Preserved and completed notices
 
@@ -16,7 +19,7 @@ Full LGPL2.1, GPL2, GPL3 and LGPL3 terms are now included in
 [LICENSES](../LICENSES/README.md), with component scopes, source URLs and exact
 copied-file SHA-256 hashes. Legal text is copied verbatim; Linux SPDX/usage metadata
 is excluded from the GPL2 text. These are terms for separately licensed components,
-not a blanket license or a new grant for FocalFlow/backend source.
+not a blanket Apache grant for the GNU/font/resource tree.
 
 ## Resource and bootstrap provenance
 
@@ -36,10 +39,21 @@ separate facts: wrapper properties still select the 7.6.4 distribution. The JAR
 and distribution URL are unchanged. The dated inventory's earlier unresolved
 wrapper checksum entry is superseded by this exact upstream match.
 
-## Remaining publication decisions
+## Source-only distribution boundaries
 
-Original-code licensing and applicable rights, mixed table/font terms, native
-linking/source/relinking scope and final package notice delivery remain distinct
-questions. See [backend/THIRD_PARTY.md](../backend/THIRD_PARTY.md) as well. Model
-weights, participant data, papers, private config and old Git history are not
-included. No project-wide license or public release clearance is asserted.
+This release includes source, required upstream resources and the wrapper bootstrap
+JAR. It does not include an APK, model weights, participant data, papers, private
+config or old Git history. The selected paired source snapshot is confirmed in
+[source baseline](source-baseline.md); the documented difference from the last
+actual Luna startup variant is retained.
+
+Per-file table/font declarations remain as provided. External dependencies,
+provider services and any separately obtained models have their own terms;
+requirements/model names are not grants to redistribute those materials. The dated
+[backend inventory](../backend/THIRD_PARTY.md) describes an earlier snapshot and
+is linked to this current license decision.
+
+A future binary/package distributor must satisfy the applicable native-linking,
+source/relinking and notice-delivery requirements of included third-party components.
+Those package-specific obligations are distinct from this source-only release.
+Existing copyright headers and third-party legal texts are retained unchanged.

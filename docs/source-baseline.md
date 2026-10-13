@@ -1,7 +1,8 @@
 # Selected source baseline
 
 This monorepo imports Git source trees without their history, then overlays 34
-hash-verified frozen files from a paired offline-tested snapshot:
+hash-verified frozen files from a paired offline-tested snapshot, selected as the
+release baseline on 2026-10-13:
 
 | Component | Base commit | Imported source files |
 | --- | --- | --- |
