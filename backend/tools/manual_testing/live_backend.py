@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Temporary, operator-started production runner. --selftest never imports run."""
 import json
+import errno
 import base64
 import hashlib
 import logging
@@ -60,7 +61,8 @@ SAFE_CAUSES = frozenset(('PROXY_ERROR', 'TLS_ERROR', 'DNS_ERROR', 'CONNECT_TIMEO
 def error_metadata(error):
     result = {'error_class': type(error).__name__}
     code = getattr(error, 'code', None)
-    if isinstance(code, str) and re.fullmatch(r'[A-Za-z_]{1,64}', code): result['error_code'] = code
+    if isinstance(error, OSError) and error.errno == errno.EADDRINUSE: result['error_code'] = 'PORT_IN_USE'
+    elif isinstance(code, str) and re.fullmatch(r'[A-Za-z_]{1,64}', code): result['error_code'] = code
     elif type(error).__name__ == 'ValidationError': result['error_code'] = 'INVALID_OUTPUT'
     elif len(error.args) == 1 and isinstance(error.args[0], str) and error.args[0] in (
             'CONFIG_PERMISSIONS', 'CONFIG_FIELDS', 'CONFIG_SELECTION', 'CONFIG_FORMAT', 'TARGET_FORMAT'):

@@ -1549,6 +1549,7 @@ class UIListener:
     def run_server(self, port=9998):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             self._server = server
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server.bind(('localhost', port))
             server.listen(1)
             server.setblocking(False)
