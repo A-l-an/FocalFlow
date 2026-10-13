@@ -7,11 +7,12 @@ import org.json.JSONObject;
 /** No native-focusability assertion: this only identifies that fallback was called. */
 public final class AccessibilityNodeInfoUtils {
   public static int fallbackCalls;
+  public static boolean originalResult = true;
   private static int nextElement;
   public static String generateUniqueElementId() { return "element-" + (++nextElement); }
   public static boolean shouldFocusNodeOriginal(AccessibilityNodeInfoCompat node) {
     fallbackCalls++;
-    return true;
+    return originalResult;
   }
   public static String generateElementHashId(AccessibilityNodeInfo node) { return "synthetic"; }
   public static CountDownLatch hierarchyEntered, hierarchyProceed;

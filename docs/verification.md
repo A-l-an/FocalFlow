@@ -43,8 +43,8 @@ production_java8_android_signatures=PASS
 
 ## Scope of the source delta
 
-Android production code/resources/build inputs are byte-identical to the selected
-baseline. Python model/provider payload logic, prompts, preset data, protocol and
+At the initial integration commit `617a320`, Android production code/resources/build
+inputs were byte-identical to the selected baseline. Python model/provider payload logic, prompts, preset data, protocol and
 business-stage functions are unchanged. `run.py` only resolves ADB through an
 explicit setting/PATH and binds that default for UIListener. The manual entry
 files derive their source from `__file__`, use operator/current Python, generic
@@ -119,3 +119,14 @@ SHA-256: 98ef18d4275db4fd5999a585e16ca543468807bca69be91cac90e34a09392a32
 This cache-backed build does not establish fresh-OS provisioning, signing/install
 compatibility, native interaction quality or complete task success. The APK is
 a generated artifact and is not included in the source repository.
+
+## Follow-up native identity repair
+
+The 2026-10-13 mapping repair changes `NodeMappingManager` and its synthetic Java
+fixtures. The focused regression changed from 46 checks / 14 failures to 46 / 0.
+The existing Java suite and Java8/Android34 signature checks passed; independent
+identity stress checks passed 508 / 0. The updated Android source built successfully
+with existing caches in 131.54 seconds; signing preserved all code/resource payloads.
+No Python runtime or model/prompt/protocol behavior changed in this repair.
+See [known issues](known-issues.md#native-node-identity-repair-2026-10-13) for the
+separate device-validation limit.

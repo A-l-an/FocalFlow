@@ -1,7 +1,7 @@
 # Known issues and evidence limits
 
-These issues remain deliberately unchanged in this directory integration. No
-paused behavior repair is resumed without a separate explicit instruction.
+The initial directory integration preserved these issues. Follow-up repairs and
+remaining device-validation limits are recorded separately below.
 
 | Issue | Evidence / current status |
 | --- | --- |
@@ -21,3 +21,17 @@ as part of this packaging migration.
 Do not attach private incident logs, real screenshots, speech, API config or
 credentials to public issues. Reproducible reports should use synthetic fixtures,
 content-free error IDs, tool versions and the source revision.
+
+## Native node identity repair (2026-10-13)
+
+Reverse lookup now uses Android native-node identity through
+`AccessibilityNodeInfoCompat.equals`/`hashCode`. Different native nodes with the
+same layout attributes no longer overwrite each other's virtual-node mapping.
+Owned node copies are removed from reverse lookup before recycling; string-based
+description lookup returns no result when the description is ambiguous.
+
+The synthetic regression fails before the repair (14 failures across 46 checks)
+and passes after it. Existing Java regressions and Android signature/build checks
+pass; an independent 508-check identity stress probe also passed. These checks
+establish the mapping defect and its repair, not the cause of the earlier real
+merchant-activation stall. Native device acceptance remains under investigation.

@@ -24,6 +24,7 @@ public class AccessibilityNodeInfo {
  public int getChildCount(){return state.children.size();}
  public AccessibilityNodeInfo getChild(int i){childReads++;return obtain(state.children.get(i));}
  public AccessibilityNodeInfo getParent(){return state.parent==null?null:obtain(state.parent);}
+ public String getUniqueId(){return "synthetic-uid-"+System.identityHashCode(identity);}
  public CharSequence getPackageName(){return state.packageName;} public int getWindowId(){return state.windowId;}
  public CharSequence getClassName(){propertyReads++;if(propertyFailure!=null)throw propertyFailure;return state.className;}
  public CharSequence getText(){propertyReads++;return state.text;} public CharSequence getContentDescription(){return state.description;}

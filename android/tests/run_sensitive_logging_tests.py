@@ -20,6 +20,7 @@ parser.add_argument('--python38', type=pathlib.Path)
 parser.add_argument('--continuity-mode', choices=('delay', 'events', 'gestures', 'queue', 'admission', 'coalescing', 'reservation'))
 parser.add_argument('--service-source', type=pathlib.Path)
 parser.add_argument('--utils-source', type=pathlib.Path)
+parser.add_argument('--mapping-identity-only', action='store_true')
 parser.add_argument('--maintenance-mode', choices=('fields', 'optional'))
 args = parser.parse_args()
 repo = pathlib.Path(__file__).resolve().parents[1]
@@ -65,6 +66,19 @@ public final class RawNodeJsonHarness {
   private static String generateUniqueElementId() {return AccessibilityNodeInfoUtils.generateUniqueElementId();}
 ''' + raw_method.group() + '\n}\n')
     inputs.append(raw_harness)
+    # Use the actual fallback property hash so identity regressions exercise real collisions.
+    hash_method = re.search(r'  public static String generateElementHashId\(AccessibilityNodeInfo node\) \{.*?\n  \}', raw_source, re.S)
+    if hash_method is None:
+        raise RuntimeError('Production fallback property hash was not found')
+    helper_stub = repo / 'tests/offline_java/stubs/com/google/android/accessibility/utils/AccessibilityNodeInfoUtils.java'
+    helper_harness = pathlib.Path(tmp) / 'AccessibilityNodeInfoUtils.java'
+    helper_harness.write_text(helper_stub.read_text().replace(
+        'import android.view.accessibility.AccessibilityNodeInfo;',
+        'import android.view.accessibility.AccessibilityNodeInfo;\nimport android.graphics.Rect;').replace(
+        '  public static String generateElementHashId(AccessibilityNodeInfo node) { return "synthetic"; }',
+        hash_method.group()))
+    inputs.remove(helper_stub)
+    inputs.append(helper_harness)
     # Execute the actual posted callback body, without compiling the full Android service.
     # Context, speech queue, and native capture remain explicit platform boundaries.
     service = (args.service_source or repo / 'talkback/src/main/java/com/google/android/accessibility/talkback/TalkBackService.java').read_text()
@@ -199,6 +213,9 @@ public final class UiDelayHarness {
     inputs.append(gesture_source)
     subprocess.run([javac, '-encoding', 'UTF-8', '-cp', str(args.json_jar), '-d', str(classes)] +
                    [str(path) for path in inputs], check=True)
+    if args.mapping_identity_only:
+        raise SystemExit(subprocess.run([java, '-cp', str(classes) + ':' + str(args.json_jar),
+            'com.google.android.accessibility.utils.NodeMappingIdentityTest', str(pathlib.Path(tmp) / 'identity')]).returncode)
     if args.maintenance_mode:
         test = 'NodeFieldContractTest' if args.maintenance_mode == 'fields' else 'OptionalCaptureLogTest'
         raise SystemExit(subprocess.run([java, '-cp', str(classes) + ':' + str(args.json_jar),
@@ -230,6 +247,9 @@ public final class UiDelayHarness {
 
     subprocess.run([java, '-cp', str(classes) + ':' + str(args.json_jar),
                     'com.google.android.accessibility.utils.CaptureDispatchTest', str(repo / 'tests/fixtures/synthetic_tree.json')], check=True)
+
+    subprocess.run([java, '-cp', str(classes) + ':' + str(args.json_jar),
+                    'com.google.android.accessibility.utils.NodeMappingIdentityTest', str(pathlib.Path(tmp) / 'identity')], check=True)
 
     subprocess.run([java, '-cp', str(classes) + ':' + str(args.json_jar),
                     'com.google.android.accessibility.utils.MappingRestartRaceTest', str(pathlib.Path(tmp) / 'mapping-restart')], check=True)

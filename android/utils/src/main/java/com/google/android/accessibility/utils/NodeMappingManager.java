@@ -28,7 +28,9 @@ public class NodeMappingManager {
 
     // 核心映射数据结构
     private final Map<String, AccessibilityNodeInfoCompat> virtualToActualNodeMap;
-    private final Map<String, String> actualToVirtualNodeMap;
+    // Keys share the owned copies in virtualToActualNodeMap. Native equals(), not a
+    // property hash or provider label, distinguishes nodes (including hash collisions).
+    private final Map<AccessibilityNodeInfoCompat, String> actualToVirtualNodeMap;
     private final Map<String, String> virtualToActualGlobalIdMap;
     
     // 文件日志管理
@@ -73,9 +75,9 @@ public class NodeMappingManager {
     }
 
     /**
-     * 生成实际节点的全局唯一ID
+     * 生成实际节点的持久化描述ID（属性回退值可能碰撞，不用于native身份查询）
      * @param node 实际节点
-     * @return 全局唯一ID，格式为"windowId_nodeId"
+     * @return 描述ID，格式为"windowId_nodeId"
      */
     public static String generateActualNodeGlobalId(AccessibilityNodeInfoCompat node) {
         if (node == null) {
@@ -116,16 +118,13 @@ public class NodeMappingManager {
         
         String actualNodeGlobalId = generateActualNodeGlobalId(actualNode);
         
-        // 如果virtualNodeId已存在，先回收旧的节点
-        AccessibilityNodeInfoCompat oldNode = virtualToActualNodeMap.get(virtualNodeId);
-        if (oldNode != null) {
-            oldNode.recycle();
-        }
-        
-        // 创建节点拷贝并存储
         AccessibilityNodeInfoCompat nodeCopy = AccessibilityNodeInfoCompat.obtain(actualNode);
+        removeInvalidNode(virtualNodeId);
         virtualToActualNodeMap.put(virtualNodeId, nodeCopy);
-        actualToVirtualNodeMap.put(actualNodeGlobalId, virtualNodeId);
+        // HashMap.put keeps an equal old key object. Replace it explicitly so removing
+        // an older capture cannot recycle the key owned by the newest reverse mapping.
+        actualToVirtualNodeMap.remove(nodeCopy);
+        actualToVirtualNodeMap.put(nodeCopy, virtualNodeId);
         virtualToActualGlobalIdMap.put(virtualNodeId, actualNodeGlobalId);
         
         // 保存到文件
@@ -138,7 +137,7 @@ public class NodeMappingManager {
      * @param virtualNodeId 虚拟节点ID
      * @return 实际节点，如果不存在或已失效则返回null
      */
-    public AccessibilityNodeInfoCompat getActualNode(String virtualNodeId) {
+    public synchronized AccessibilityNodeInfoCompat getActualNode(String virtualNodeId) {
         if (virtualNodeId == null) {
             return null;
         }
@@ -169,44 +168,41 @@ public class NodeMappingManager {
      * @param actualNode 实际节点
      * @return 虚拟节点ID，如果不存在则返回null
      */
-    public String getVirtualNodeId(AccessibilityNodeInfoCompat actualNode) {
+    public synchronized String getVirtualNodeId(AccessibilityNodeInfoCompat actualNode) {
         if (actualNode == null) {
             return null;
         }
         
-        String actualNodeGlobalId = generateActualNodeGlobalId(actualNode);
-        return actualToVirtualNodeMap.get(actualNodeGlobalId);
+        return actualToVirtualNodeMap.get(actualNode);
     }
 
     /**
      * 通过实际节点全局ID获取虚拟节点ID
      * @param actualNodeGlobalId 实际节点全局ID
-     * @return 虚拟节点ID，如果不存在则返回null
+     * @return 虚拟节点ID，如果不存在或描述ID对应多个映射则返回null
      */
-    public String getVirtualNodeId(String actualNodeGlobalId) {
-        return actualToVirtualNodeMap.get(actualNodeGlobalId);
+    public synchronized String getVirtualNodeId(String actualNodeGlobalId) {
+        if (actualNodeGlobalId == null) return null;
+        String match = null;
+        for (Map.Entry<String, String> entry : virtualToActualGlobalIdMap.entrySet()) {
+            if (actualNodeGlobalId.equals(entry.getValue())) {
+                if (match != null) return null;
+                match = entry.getKey();
+            }
+        }
+        return match;
     }
 
     /**
      * 通过虚拟节点ID移除映射关系
      * @param virtualNodeId 虚拟节点ID
      */
-    public void removeMappingByVirtualId(String virtualNodeId) {
+    public synchronized void removeMappingByVirtualId(String virtualNodeId) {
         if (virtualNodeId == null) {
             return;
         }
         
-        // 获取并回收节点
-        AccessibilityNodeInfoCompat node = virtualToActualNodeMap.remove(virtualNodeId);
-        if (node != null) {
-            node.recycle();
-        }
-        
-        // 移除反向映射
-        String actualNodeGlobalId = virtualToActualGlobalIdMap.remove(virtualNodeId);
-        if (actualNodeGlobalId != null) {
-            actualToVirtualNodeMap.remove(actualNodeGlobalId);
-        }
+        removeInvalidNode(virtualNodeId);
         
         saveMappingsToFile();
         saveNodeNamesToFile();
@@ -221,17 +217,13 @@ public class NodeMappingManager {
             return;
         }
         
-        // 获取并回收节点
         AccessibilityNodeInfoCompat node = virtualToActualNodeMap.remove(virtualNodeId);
         if (node != null) {
+            // Remove before recycle(), which can reset the native identity/hash.
+            actualToVirtualNodeMap.remove(node, virtualNodeId);
             node.recycle();
         }
-        
-        // 移除反向映射
-        String actualNodeGlobalId = virtualToActualGlobalIdMap.remove(virtualNodeId);
-        if (actualNodeGlobalId != null) {
-            actualToVirtualNodeMap.remove(actualNodeGlobalId);
-        }
+        virtualToActualGlobalIdMap.remove(virtualNodeId);
         
         // 注意：不调用保存方法，避免递归
     }
@@ -240,21 +232,13 @@ public class NodeMappingManager {
      * 通过实际节点移除映射关系
      * @param actualNode 实际节点
      */
-    public void removeMappingByActualNode(AccessibilityNodeInfoCompat actualNode) {
+    public synchronized void removeMappingByActualNode(AccessibilityNodeInfoCompat actualNode) {
         if (actualNode == null) {
             return;
         }
         
-        String actualNodeGlobalId = generateActualNodeGlobalId(actualNode);
-        String virtualNodeId = actualToVirtualNodeMap.remove(actualNodeGlobalId);
-        
-        if (virtualNodeId != null) {
-            AccessibilityNodeInfoCompat node = virtualToActualNodeMap.remove(virtualNodeId);
-            if (node != null) {
-                node.recycle();
-            }
-            virtualToActualGlobalIdMap.remove(virtualNodeId);
-        }
+        String virtualNodeId = actualToVirtualNodeMap.get(actualNode);
+        removeInvalidNode(virtualNodeId);
         
         saveMappingsToFile();
         saveNodeNamesToFile();
@@ -270,6 +254,7 @@ public class NodeMappingManager {
     }
 
     public synchronized void clearAllMappings() {
+        actualToVirtualNodeMap.clear();
         // 回收所有存储的节点
         for (AccessibilityNodeInfoCompat node : virtualToActualNodeMap.values()) {
             if (node != null) {
@@ -278,7 +263,6 @@ public class NodeMappingManager {
         }
         
         virtualToActualNodeMap.clear();
-        actualToVirtualNodeMap.clear();
         virtualToActualGlobalIdMap.clear();
         
         saveMappingsToFile();
@@ -460,7 +444,7 @@ public class NodeMappingManager {
                     String actualNodeGlobalId = mappingEntry.optString("actualNodeGlobalId");
                     
                     if (!virtualNodeId.isEmpty() && !actualNodeGlobalId.isEmpty()) {
-                        actualToVirtualNodeMap.put(actualNodeGlobalId, virtualNodeId);
+                        // Persisted labels cannot reconstruct live native node identity.
                         virtualToActualGlobalIdMap.put(virtualNodeId, actualNodeGlobalId);
                         loadedCount++;
                     }
