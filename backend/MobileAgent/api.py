@@ -333,9 +333,11 @@ def network_cause_code(error):
     return fallback
 
 
-def inference_chat(chat, model, api_url, token, guard=None, policy=None, *, clock=None, wait=None):
+def inference_chat(chat, model, api_url, token, guard=None, policy=None, *, clock=None, wait=None, output_limit=2048):
     from MobileAgent.config import validate_config_value
     import time
+    if type(output_limit) is not int or not 1 <= output_limit <= 8192:
+        raise ValueError('invalid chat output limit')
     validate_config_value(api_url, "FOCALFLOW_CHAT_API_URL")
     validate_config_value(token, "FOCALFLOW_CHAT_API_TOKEN")
     import requests
@@ -343,9 +345,9 @@ def inference_chat(chat, model, api_url, token, guard=None, policy=None, *, cloc
     headers = {"Content-Type": "application/json", "Authorization": "Bearer " + token}
     data = {"model": model, "messages": []}
     if model == 'gpt-6-luna':
-        data.update(max_completion_tokens=2048, reasoning_effort='none')
+        data.update(max_completion_tokens=output_limit, reasoning_effort='none')
     else:
-        data.update(max_tokens=2048, temperature=0.0, seed=1234)
+        data.update(max_tokens=output_limit, temperature=0.0, seed=1234)
     for role, content in chat:
         data['messages'].append({'role': role, 'content': content})
     for attempt in range(budget.policy.attempts):
@@ -365,7 +367,11 @@ def inference_chat(chat, model, api_url, token, guard=None, policy=None, *, cloc
             else:
                 raw = checked_bytes(response.iter_content(chunk_size=1), budget, 1024 * 1024, 'chat')
                 try:
-                    value = json.loads(raw.decode('utf-8'))['choices'][0]['message']['content']
+                    choice = json.loads(raw.decode('utf-8'))['choices'][0]
+                    if not isinstance(choice, dict): raise ValueError()
+                    if choice.get('finish_reason') == 'length':
+                        raise OperationError('chat', 'OUTPUT_TRUNCATED')
+                    value = choice['message']['content']
                     if not isinstance(value, str) or not value.strip(): raise ValueError()
                 except (ValueError, KeyError, IndexError, TypeError, UnicodeError):
                     raise OperationError('chat', 'INVALID_RESPONSE') from None

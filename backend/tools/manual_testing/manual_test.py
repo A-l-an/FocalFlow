@@ -21,7 +21,7 @@ import time
 SOURCE = Path(__file__).resolve().parents[2]
 BASE = Path(os.environ.get('FOCALFLOW_STATE_DIR', str(Path.home() / 'Library/Application Support/FocalFlow'))).expanduser()
 RUNNER = Path(__file__).with_name('live_backend.py')
-RUNNER_SHA = '99bef9c5532b0b8bd1c628c3c4ceb530ce720a13adc260466b6ed998b6bee980'
+RUNNER_SHA = 'f3641e3d0556883bdf35632b0a8b367e125f751bc1b83f54633fa2cab640d98a'
 PYTHON = os.environ.get('FOCALFLOW_PYTHON', sys.executable)
 CONFIG = Path(os.environ.get('FOCALFLOW_CONFIG', str(Path.home() / '.config/focalflow/providers.env'))).expanduser()
 ADB = os.environ.get('FOCALFLOW_ADB') or shutil.which('adb') or 'adb'
@@ -34,6 +34,7 @@ CAUSES = frozenset(('PROXY_ERROR', 'TLS_ERROR', 'DNS_ERROR', 'CONNECT_TIMEOUT',
     'NETWORK_UNREACHABLE', 'CONNECTION_ERROR'))
 ERROR_CODES = frozenset(('NETWORK_ERROR', 'NETWORK_TIMEOUT', 'PROVIDER_ERROR', 'HTTP_ERROR',
     'INVALID_RESPONSE', 'RESPONSE_LIMIT', 'LIVE_CALL_LIMIT', 'DEADLINE_EXCEEDED',
+    'OUTPUT_TRUNCATED',
     'INVALID_BASE_OR_BUSY', 'INVALID_OUTPUT', 'CANCELLED', 'ACQUIRE_FAILED',
     'RUNNER_CHANGED', 'LOCAL_RUNTIME_MISSING', 'PRIVATE_CONFIG_MISSING_OR_PERMISSIONS',
     'BACKEND_SOURCE_MISSING', 'ADB_UNAVAILABLE', 'TARGET_FORMAT', 'CONFIG_FORMAT',
@@ -88,7 +89,9 @@ class ConsoleEvents:
         status = event.get('http_status')
         details = code + (' / ' + cause if cause else '')
         if type(status) is int and 100 <= status <= 599: details += ' / HTTP %d' % status
-        if cause == 'PROXY_ERROR': action = '检查电脑代理是否运行，并确认代理可访问已配置的模型服务。'
+        if code == 'OUTPUT_TRUNCATED': action = '模型回复达到输出上限，内容不完整；这次分析未完成。'
+        elif code == 'INVALID_OUTPUT': action = '返回数据未通过格式或节点校验；这次分析未完成。'
+        elif cause == 'PROXY_ERROR': action = '检查电脑代理是否运行，并确认代理可访问已配置的模型服务。'
         elif cause == 'DNS_ERROR': action = '已配置的模型接口域名无法解析；检查电脑 DNS 与网络，恢复后重新启动本轮。'
         elif cause == 'TLS_ERROR': action = '检查代理与证书连接后重新启动本轮。'
         elif code in ('NETWORK_ERROR', 'NETWORK_TIMEOUT'): action = '检查电脑网络与代理；这次模型请求未成功。'

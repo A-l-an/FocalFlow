@@ -88,9 +88,10 @@ def load_runtime_setting(name):
     }[name])
 
 
-def _live_chat(chat, model, guard=None, policy=None):
+def _live_chat(chat, model, guard=None, policy=None, *, output_limit=2048):
     return inference_chat(chat, model, load_runtime_setting("API_url"),
-                          load_runtime_setting("token"), guard=guard, policy=policy)
+                          load_runtime_setting("token"), guard=guard, policy=policy,
+                          output_limit=output_limit)
 
 
 def log_api_request(api_name, start_time, response=None):
@@ -396,16 +397,17 @@ class MobileAgentStateMachine(object):
             return get_voice(self.v2t_model, initial_prompt, guard=self.guard)
         return get_voice(self.v2t_model, initial_prompt)
 
-    def _checked(self, function, *args):
+    def _checked(self, function, *args, output_limit=None):
         guard = self.guard
         if guard is not None:
             guard.check()
+        kwargs = {}
+        if function is _live_chat and output_limit is not None:
+            kwargs['output_limit'] = output_limit
         if function in (_live_chat, text2audio, play_long_beep) and guard is not None:
-            kwargs = {'guard': guard}
+            kwargs['guard'] = guard
             if function in (_live_chat, text2audio): kwargs['policy'] = self.policy
-            result = function(*args, **kwargs)
-        else:
-            result = function(*args)
+        result = function(*args, **kwargs)
         if guard is not None:
             guard.check()
         return result
@@ -669,7 +671,7 @@ class MobileAgentStateMachine(object):
         
         logging.info("开始调用分类Agent API...")
         start_time = time.time()
-        output_classify = self._checked(self.chat, chat_classify, 'gpt-4')
+        output_classify = self._checked(self.chat, chat_classify, 'gpt-4', output_limit=8192)
         log_api_request("####Classification####", start_time, output_classify)
         
         thought, categories_str, selected_str = sections(

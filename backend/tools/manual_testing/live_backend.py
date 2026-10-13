@@ -61,6 +61,7 @@ def error_metadata(error):
     result = {'error_class': type(error).__name__}
     code = getattr(error, 'code', None)
     if isinstance(code, str) and re.fullmatch(r'[A-Za-z_]{1,64}', code): result['error_code'] = code
+    elif type(error).__name__ == 'ValidationError': result['error_code'] = 'INVALID_OUTPUT'
     elif len(error.args) == 1 and isinstance(error.args[0], str) and error.args[0] in (
             'CONFIG_PERMISSIONS', 'CONFIG_FIELDS', 'CONFIG_SELECTION', 'CONFIG_FORMAT', 'TARGET_FORMAT'):
         result['error_code'] = error.args[0]
@@ -128,7 +129,8 @@ def install_call_wrappers(run, emit, model, chat_limit=24, tts_limit=12, evidenc
         emit('call_begin', stage=stage, call_number=number)
         if stage == 'chat' and evidence is not None:
             evidence('chat-%03d-input' % number, lambda: {
-                'model': args[1], 'messages': [{'role': role, 'content': content}
+                'model': args[1], 'output_limit': kwargs['output_limit'],
+                'messages': [{'role': role, 'content': content}
                                               for role, content in args[0]]})
         try:
             result = function(*args, **kwargs)
@@ -141,10 +143,10 @@ def install_call_wrappers(run, emit, model, chat_limit=24, tts_limit=12, evidenc
         return result
 
     def chat(chat, requested_model, api_url, token, guard=None, policy=None,
-             *, clock=None, wait=None):
+             *, clock=None, wait=None, output_limit=2048):
         return invoke('chat', chat_limit, originals[0],
                       (chat, model, api_url, token),
-                      dict(guard=guard, policy=policy, clock=clock, wait=wait))
+                      dict(guard=guard, policy=policy, clock=clock, wait=wait, output_limit=output_limit))
 
     def tts(text, API_TOKEN=None, guard=None, policy=None):
         return invoke('tts', tts_limit, originals[1], (text,),
@@ -219,7 +221,9 @@ def observe_listener(listener, run, emit, evidence=None):
             if 'error' in obj:
                 outcome = 'ERROR'
                 code = obj['error']
-                if isinstance(code, str) and re.fullmatch(r'[A-Za-z_]{1,64}', code):
+                if code == 'ValidationError':
+                    metadata['error_code'] = 'INVALID_OUTPUT'
+                elif isinstance(code, str) and re.fullmatch(r'[A-Za-z_]{1,64}', code):
                     metadata['error_code'] = code
             elif obj.get('type') == 'UI_UPDATE' and isinstance(obj.get('payload'), dict):
                 outcome = 'UI_UPDATE'
@@ -385,9 +389,9 @@ def selftest():
                                    'gpt-4o', chat_limit=1, tts_limit=1)
     assert fake._live_chat is identity
     assert fake.inference_chat([], 'gpt-4', 'fake-url', 'fake-token', guard, policy,
-                               clock=clock, wait=wait) is response
+                               clock=clock, wait=wait, output_limit=8192) is response
     assert observed[-1] == (([], 'gpt-4o', 'fake-url', 'fake-token'),
-                           dict(guard=guard, policy=policy, clock=clock, wait=wait))
+                           dict(guard=guard, policy=policy, clock=clock, wait=wait, output_limit=8192))
     # Mirrors the production constructor and _checked identity branch.
     fake_agent_tts = fake.text2audio
     assert fake_agent_tts is fake.text2audio
